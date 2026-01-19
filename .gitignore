@@ -3,9 +3,8 @@
 # dependencies
 /node_modules
 
-# next.js
-/.next/
-/out/
+# Extension build
+dist/
 
 # production
 /build
@@ -19,10 +18,9 @@ yarn-error.log*
 # env files
 .env*
 
-# vercel
-.vercel
+# rspack
+.rspack/
 
 # typescript
 *.tsbuildinfo
-next-env.d.ts
 .aider*

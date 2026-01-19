@@ -2,18 +2,16 @@
 
 import { useState } from "react"
 import { Plus, Download, Check, Copy, ChevronRight, Shield, Eye } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { WalletProvider, useWallet } from "@/contexts/wallet-context"
-import { cn } from "@/lib/utils"
-import { useRouter } from "next/navigation"
+import { Button } from "../components/ui/button"
+import { Input } from "../components/ui/input"
+import { Label } from "../components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
+import { useWallet } from "../contexts/wallet-context"
+import { cn } from "../lib/utils"
 
 type OnboardingStep = "welcome" | "choice" | "create" | "confirm" | "import"
 
 function OnboardingFlow() {
-  const router = useRouter()
   const { createNewAccount, importAccount, completeOnboarding } = useWallet()
 
   const [step, setStep] = useState<OnboardingStep>("welcome")
@@ -79,7 +77,7 @@ function OnboardingFlow() {
 
     if (createdAccount) {
       completeOnboarding(createdAccount)
-      router.push("/")
+      window.close()
     }
   }
 
@@ -90,7 +88,7 @@ function OnboardingFlow() {
     try {
       const account = await importAccount(importType, importValue.trim())
       completeOnboarding(account)
-      router.push("/")
+      window.close()
     } catch (err) {
       setImportError(err instanceof Error ? err.message : "Failed to import account")
     } finally {
@@ -106,7 +104,7 @@ function OnboardingFlow() {
           <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
             <Shield className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-semibold text-xl">Solana Wallet</span>
+          <span className="font-semibold text-xl">Ruma Wallet</span>
         </div>
       </header>
 
@@ -118,7 +116,7 @@ function OnboardingFlow() {
               <Shield className="h-12 w-12 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold mb-2">Welcome to Solana Wallet</h1>
+              <h1 className="text-2xl font-bold mb-2">Welcome to your Ruma</h1>
               <p className="text-muted-foreground">
                 Your secure gateway to the Solana blockchain. Simple, fast, and beginner-friendly.
               </p>
@@ -359,10 +357,4 @@ function OnboardingFlow() {
   )
 }
 
-export default function OnboardingPage() {
-  return (
-    <WalletProvider>
-      <OnboardingFlow />
-    </WalletProvider>
-  )
-}
+export default OnboardingFlow

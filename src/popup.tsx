@@ -1,0 +1,17 @@
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { WalletProvider } from '../contexts/wallet-context';
+import { ThemeProvider } from '../components/theme-provider';
+import App from './App';
+import './index.css';
+
+const container = document.getElementById('root');
+const root = createRoot(container!);
+
+root.render(
+  <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <WalletProvider>
+      <App />
+    </WalletProvider>
+  </ThemeProvider>
+);

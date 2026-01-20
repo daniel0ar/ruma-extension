@@ -40,6 +40,7 @@
     "autoprefixer": "^10.4.20",
     "bip39": "3.1.0",
     "bs58": "6.0.0",
+    "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
@@ -63,7 +64,6 @@
     "zod": "3.25.76"
   },
   "devDependencies": {
-    "postcss-loader": "^8.2.0",
     "@rspack/cli": "^1.7.2",
     "@rspack/core": "^1.7.2",
     "@tailwindcss/postcss": "^4.1.9",
@@ -72,6 +72,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "postcss": "^8.5",
+    "postcss-loader": "^8.2.0",
     "tailwindcss": "^4.1.9",
     "typescript": "^5"
   }

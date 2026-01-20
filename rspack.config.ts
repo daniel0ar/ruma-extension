@@ -22,6 +22,9 @@ export default defineConfig({
       lib: path.resolve(__dirname, "./lib"),
       contexts: path.resolve(__dirname, "./contexts"),
     },
+    fallback: {
+      buffer: require.resolve('buffer'),
+    },
   },
   module: {
     rules: [
@@ -38,6 +41,9 @@ export default defineConfig({
     ],
   },
   plugins: [
+    new (require("@rspack/core").ProvidePlugin)({
+      Buffer: ['buffer', 'Buffer'],
+    }),
     new (require("@rspack/core").HtmlRspackPlugin)({
       template: "./src/popup.html",
       filename: "popup.html",

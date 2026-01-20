@@ -7,6 +7,7 @@ export default defineConfig({
     popup: "./src/popup.tsx",
     "service-worker": "./src/service-worker.ts",
     "content-script": "./src/content-script.ts",
+    "onboarding-entry": "./src/onboarding-entry.tsx",
   },
   output: {
     path: path.resolve(__dirname, "dist"),
@@ -49,6 +50,12 @@ export default defineConfig({
         { from: "public/*.png", to: "[name][ext]" },
         { from: "public/*.svg", to: "[name][ext]" },
       ],
+    }),
+    new (require("@rspack/core").HtmlRspackPlugin)({
+      template: "./src/onboarding.html",
+      filename: "onboarding.html",
+      chunks: ["onboarding-entry"],
+      inject: "body",
     }),
   ],
   experiments: {

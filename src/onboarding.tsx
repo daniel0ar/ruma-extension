@@ -94,7 +94,8 @@ function OnboardingFlow() {
 
     if (createdAccount) {
       completeOnboarding(createdAccount);
-      window.close();
+      // Close the onboarding tab
+      chrome.runtime.sendMessage({ type: 'CLOSE_ONBOARDING_TAB' });
     }
   };
 
@@ -105,7 +106,8 @@ function OnboardingFlow() {
     try {
       const account = await importAccount(importType, importValue.trim());
       completeOnboarding(account);
-      window.close();
+      // Close the onboarding tab
+      chrome.runtime.sendMessage({ type: 'CLOSE_ONBOARDING_TAB' });
     } catch (err) {
       setImportError(
         err instanceof Error ? err.message : "Failed to import account",

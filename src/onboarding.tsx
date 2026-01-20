@@ -1,100 +1,119 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Plus, Download, Check, Copy, ChevronRight, Shield, Eye } from "lucide-react"
-import { Button } from "../components/ui/button"
-import { Input } from "../components/ui/input"
-import { Label } from "../components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
-import { useWallet } from "../contexts/wallet-context"
-import { cn } from "../lib/utils"
+import React, { useState } from "react";
+import {
+  Plus,
+  Download,
+  Check,
+  Copy,
+  ChevronRight,
+  Shield,
+  Eye,
+} from "lucide-react";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../components/ui/tabs";
+import { useWallet } from "../contexts/wallet-context";
+import { cn } from "../lib/utils";
 
-type OnboardingStep = "welcome" | "choice" | "create" | "confirm" | "import"
+type OnboardingStep = "welcome" | "choice" | "create" | "confirm" | "import";
 
 function OnboardingFlow() {
-  const { createNewAccount, importAccount, completeOnboarding } = useWallet()
+  const { createNewAccount, importAccount, completeOnboarding } = useWallet();
 
-  const [step, setStep] = useState<OnboardingStep>("welcome")
-  const [mnemonic, setMnemonic] = useState<string | null>(null)
-  const [mnemonicWords, setMnemonicWords] = useState<string[]>([])
+  const [step, setStep] = useState<OnboardingStep>("welcome");
+  const [mnemonic, setMnemonic] = useState<string | null>(null);
+  const [mnemonicWords, setMnemonicWords] = useState<string[]>([]);
   const [createdAccount, setCreatedAccount] = useState<{
-    id: string
-    name: string
-    address: string
-    publicKey: string
-    color: string
-    isImported: boolean
-  } | null>(null)
-  const [mnemonicCopied, setMnemonicCopied] = useState(false)
-  const [confirmWords, setConfirmWords] = useState<string[]>(["", "", ""])
+    id: string;
+    name: string;
+    address: string;
+    publicKey: string;
+    color: string;
+    isImported: boolean;
+  } | null>(null);
+  const [mnemonicCopied, setMnemonicCopied] = useState(false);
+  const [confirmWords, setConfirmWords] = useState<string[]>(["", "", ""]);
   const [confirmIndices] = useState<number[]>(() => {
     // Pick 3 random indices
-    const indices: number[] = []
+    const indices: number[] = [];
     while (indices.length < 3) {
-      const idx = Math.floor(Math.random() * 12)
-      if (!indices.includes(idx)) indices.push(idx)
+      const idx = Math.floor(Math.random() * 12);
+      if (!indices.includes(idx)) indices.push(idx);
     }
-    return indices.sort((a, b) => a - b)
-  })
-  const [confirmError, setConfirmError] = useState<string | null>(null)
-  const [importValue, setImportValue] = useState("")
-  const [importType, setImportType] = useState<"mnemonic" | "privateKey">("mnemonic")
-  const [importError, setImportError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [showMnemonic, setShowMnemonic] = useState(false)
+    return indices.sort((a, b) => a - b);
+  });
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [importValue, setImportValue] = useState("");
+  const [importType, setImportType] = useState<"mnemonic" | "privateKey">(
+    "mnemonic",
+  );
+  const [importError, setImportError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showMnemonic, setShowMnemonic] = useState(false);
 
   const handleCreateNew = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const { mnemonic: newMnemonic, account } = await createNewAccount()
-      setMnemonic(newMnemonic)
-      setMnemonicWords(newMnemonic.split(" "))
-      setCreatedAccount(account)
-      setStep("create")
+      const { mnemonic: newMnemonic, account } = await createNewAccount();
+      setMnemonic(newMnemonic);
+      setMnemonicWords(newMnemonic.split(" "));
+      setCreatedAccount(account);
+      setStep("create");
     } catch (err) {
-      console.error(err)
+      console.error(err);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleCopyMnemonic = async () => {
     if (mnemonic) {
-      await navigator.clipboard.writeText(mnemonic)
-      setMnemonicCopied(true)
-      setTimeout(() => setMnemonicCopied(false), 2000)
+      await navigator.clipboard.writeText(mnemonic);
+      setMnemonicCopied(true);
+      setTimeout(() => setMnemonicCopied(false), 2000);
     }
-  }
+  };
 
   const handleConfirmMnemonic = () => {
     // Verify the user entered correct words
-    const isCorrect = confirmIndices.every((idx, i) => confirmWords[i].toLowerCase().trim() === mnemonicWords[idx])
+    const isCorrect = confirmIndices.every(
+      (idx, i) => confirmWords[i].toLowerCase().trim() === mnemonicWords[idx],
+    );
 
     if (!isCorrect) {
-      setConfirmError("The words you entered don't match. Please try again.")
-      return
+      setConfirmError("The words you entered don't match. Please try again.");
+      return;
     }
 
     if (createdAccount) {
-      completeOnboarding(createdAccount)
-      window.close()
+      completeOnboarding(createdAccount);
+      window.close();
     }
-  }
+  };
 
   const handleImport = async () => {
-    if (!importValue.trim()) return
-    setIsLoading(true)
-    setImportError(null)
+    if (!importValue.trim()) return;
+    setIsLoading(true);
+    setImportError(null);
     try {
-      const account = await importAccount(importType, importValue.trim())
-      completeOnboarding(account)
-      window.close()
+      const account = await importAccount(importType, importValue.trim());
+      completeOnboarding(account);
+      window.close();
     } catch (err) {
-      setImportError(err instanceof Error ? err.message : "Failed to import account")
+      setImportError(
+        err instanceof Error ? err.message : "Failed to import account",
+      );
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -118,10 +137,15 @@ function OnboardingFlow() {
             <div>
               <h1 className="text-2xl font-bold mb-2">Welcome to your Ruma</h1>
               <p className="text-muted-foreground">
-                Your secure gateway to the Solana blockchain. Simple, fast, and beginner-friendly.
+                Your secure gateway to the Solana blockchain. Simple, fast, and
+                beginner-friendly.
               </p>
             </div>
-            <Button size="lg" className="w-full" onClick={() => setStep("choice")}>
+            <Button
+              size="lg"
+              className="w-full"
+              onClick={() => setStep("choice")}
+            >
               Get Started
               <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
@@ -132,7 +156,9 @@ function OnboardingFlow() {
           <div className="flex flex-col gap-6 w-full animate-in fade-in duration-300">
             <div className="text-center">
               <h1 className="text-2xl font-bold mb-2">Set Up Your Wallet</h1>
-              <p className="text-muted-foreground">Create a new wallet or import an existing one</p>
+              <p className="text-muted-foreground">
+                Create a new wallet or import an existing one
+              </p>
             </div>
 
             <div className="flex flex-col gap-3">
@@ -146,7 +172,9 @@ function OnboardingFlow() {
                 </div>
                 <div className="flex-1">
                   <p className="font-semibold">Create New Wallet</p>
-                  <p className="text-sm text-muted-foreground">Generate a new recovery phrase</p>
+                  <p className="text-sm text-muted-foreground">
+                    Generate a new recovery phrase
+                  </p>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </button>
@@ -160,13 +188,18 @@ function OnboardingFlow() {
                 </div>
                 <div className="flex-1">
                   <p className="font-semibold">Import Existing Wallet</p>
-                  <p className="text-sm text-muted-foreground">Use recovery phrase or private key</p>
+                  <p className="text-sm text-muted-foreground">
+                    Use recovery phrase or private key
+                  </p>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </button>
             </div>
 
-            <button onClick={() => setStep("welcome")} className="text-sm text-muted-foreground hover:text-foreground">
+            <button
+              onClick={() => setStep("welcome")}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
               Back
             </button>
           </div>
@@ -176,15 +209,33 @@ function OnboardingFlow() {
           <div className="flex flex-col gap-6 w-full animate-in fade-in duration-300">
             <div className="text-center">
               <h1 className="text-2xl font-bold mb-2">Your Recovery Phrase</h1>
-              <p className="text-muted-foreground">Write down these 12 words in order. Never share them with anyone.</p>
+              <p className="text-muted-foreground">
+                Write down these 12 words in order. Never share them with
+                anyone.
+              </p>
             </div>
 
             <div className="relative">
-              <div className={cn("p-4 rounded-xl bg-secondary", !showMnemonic && "select-none")}>
-                <div className={cn("grid grid-cols-3 gap-3", !showMnemonic && "blur-md")}>
+              <div
+                className={cn(
+                  "p-4 rounded-xl bg-secondary",
+                  !showMnemonic && "select-none",
+                )}
+              >
+                <div
+                  className={cn(
+                    "grid grid-cols-3 gap-3",
+                    !showMnemonic && "blur-md",
+                  )}
+                >
                   {mnemonicWords.map((word, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm bg-background rounded-lg p-2">
-                      <span className="text-muted-foreground w-5">{i + 1}.</span>
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 text-sm bg-background rounded-lg p-2"
+                    >
+                      <span className="text-muted-foreground w-5">
+                        {i + 1}.
+                      </span>
                       <span className="font-mono font-medium">{word}</span>
                     </div>
                   ))}
@@ -192,7 +243,10 @@ function OnboardingFlow() {
               </div>
               {!showMnemonic && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Button variant="secondary" onClick={() => setShowMnemonic(true)}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setShowMnemonic(true)}
+                  >
                     <Eye className="h-4 w-4 mr-2" />
                     Reveal Recovery Phrase
                   </Button>
@@ -202,7 +256,11 @@ function OnboardingFlow() {
 
             {showMnemonic && (
               <>
-                <Button variant="outline" onClick={handleCopyMnemonic} className="w-full bg-transparent">
+                <Button
+                  variant="outline"
+                  onClick={handleCopyMnemonic}
+                  className="w-full bg-transparent"
+                >
                   {mnemonicCopied ? (
                     <>
                       <Check className="h-4 w-4 mr-2" />
@@ -218,18 +276,26 @@ function OnboardingFlow() {
 
                 <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20">
                   <p className="text-sm text-destructive font-medium">
-                    Warning: Never share your recovery phrase. Anyone with these words can access your funds.
+                    Warning: Never share your recovery phrase. Anyone with these
+                    words can access your funds.
                   </p>
                 </div>
 
-                <Button size="lg" className="w-full" onClick={() => setStep("confirm")}>
+                <Button
+                  size="lg"
+                  className="w-full"
+                  onClick={() => setStep("confirm")}
+                >
                   I've Saved My Recovery Phrase
                   <ChevronRight className="h-4 w-4 ml-2" />
                 </Button>
               </>
             )}
 
-            <button onClick={() => setStep("choice")} className="text-sm text-muted-foreground hover:text-foreground">
+            <button
+              onClick={() => setStep("choice")}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
               Back
             </button>
           </div>
@@ -238,24 +304,31 @@ function OnboardingFlow() {
         {step === "confirm" && (
           <div className="flex flex-col gap-6 w-full animate-in fade-in duration-300">
             <div className="text-center">
-              <h1 className="text-2xl font-bold mb-2">Confirm Recovery Phrase</h1>
-              <p className="text-muted-foreground">Enter the words at the following positions to verify</p>
+              <h1 className="text-2xl font-bold mb-2">
+                Confirm Recovery Phrase
+              </h1>
+              <p className="text-muted-foreground">
+                Enter the words at the following positions to verify
+              </p>
             </div>
 
             <div className="flex flex-col gap-4">
               {confirmIndices.map((idx, i) => (
                 <div key={idx}>
-                  <Label htmlFor={`word-${i}`} className="text-sm text-muted-foreground mb-1 block">
+                  <Label
+                    htmlFor={`word-${i}`}
+                    className="text-sm text-muted-foreground mb-1 block"
+                  >
                     Word #{idx + 1}
                   </Label>
                   <Input
                     id={`word-${i}`}
                     value={confirmWords[i]}
                     onChange={(e) => {
-                      const newWords = [...confirmWords]
-                      newWords[i] = e.target.value
-                      setConfirmWords(newWords)
-                      setConfirmError(null)
+                      const newWords = [...confirmWords];
+                      newWords[i] = e.target.value;
+                      setConfirmWords(newWords);
+                      setConfirmError(null);
                     }}
                     placeholder={`Enter word #${idx + 1}`}
                     className="bg-secondary border-0"
@@ -264,7 +337,11 @@ function OnboardingFlow() {
               ))}
             </div>
 
-            {confirmError && <p className="text-sm text-destructive text-center">{confirmError}</p>}
+            {confirmError && (
+              <p className="text-sm text-destructive text-center">
+                {confirmError}
+              </p>
+            )}
 
             <Button
               size="lg"
@@ -275,7 +352,10 @@ function OnboardingFlow() {
               Confirm
             </Button>
 
-            <button onClick={() => setStep("create")} className="text-sm text-muted-foreground hover:text-foreground">
+            <button
+              onClick={() => setStep("create")}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
               Back
             </button>
           </div>
@@ -285,10 +365,17 @@ function OnboardingFlow() {
           <div className="flex flex-col gap-6 w-full animate-in fade-in duration-300">
             <div className="text-center">
               <h1 className="text-2xl font-bold mb-2">Import Wallet</h1>
-              <p className="text-muted-foreground">Enter your recovery phrase or private key</p>
+              <p className="text-muted-foreground">
+                Enter your recovery phrase or private key
+              </p>
             </div>
 
-            <Tabs value={importType} onValueChange={(v) => setImportType(v as "mnemonic" | "privateKey")}>
+            <Tabs
+              value={importType}
+              onValueChange={(v) =>
+                setImportType(v as "mnemonic" | "privateKey")
+              }
+            >
               <TabsList className="w-full">
                 <TabsTrigger value="mnemonic" className="flex-1">
                   Recovery Phrase
@@ -308,8 +395,8 @@ function OnboardingFlow() {
                     placeholder="Enter your 12 or 24 word recovery phrase, separated by spaces"
                     value={importValue}
                     onChange={(e) => {
-                      setImportValue(e.target.value)
-                      setImportError(null)
+                      setImportValue(e.target.value);
+                      setImportError(null);
                     }}
                     className="w-full h-32 p-4 rounded-xl bg-secondary border-0 resize-none focus:outline-none focus:ring-2 focus:ring-primary"
                   />
@@ -326,8 +413,8 @@ function OnboardingFlow() {
                     placeholder="Enter your private key (base58)"
                     value={importValue}
                     onChange={(e) => {
-                      setImportValue(e.target.value)
-                      setImportError(null)
+                      setImportValue(e.target.value);
+                      setImportError(null);
                     }}
                     type="password"
                     className="bg-secondary border-0"
@@ -336,13 +423,25 @@ function OnboardingFlow() {
               </TabsContent>
             </Tabs>
 
-            {importError && <p className="text-sm text-destructive text-center">{importError}</p>}
+            {importError && (
+              <p className="text-sm text-destructive text-center">
+                {importError}
+              </p>
+            )}
 
-            <Button size="lg" className="w-full" onClick={handleImport} disabled={!importValue.trim() || isLoading}>
+            <Button
+              size="lg"
+              className="w-full"
+              onClick={handleImport}
+              disabled={!importValue.trim() || isLoading}
+            >
               {isLoading ? "Importing..." : "Import Wallet"}
             </Button>
 
-            <button onClick={() => setStep("choice")} className="text-sm text-muted-foreground hover:text-foreground">
+            <button
+              onClick={() => setStep("choice")}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
               Back
             </button>
           </div>
@@ -351,10 +450,12 @@ function OnboardingFlow() {
 
       {/* Footer */}
       <footer className="p-6 text-center">
-        <p className="text-xs text-muted-foreground">Connected to Solana Devnet</p>
+        <p className="text-xs text-muted-foreground">
+          Connected to Solana Devnet
+        </p>
       </footer>
     </div>
-  )
+  );
 }
 
-export default OnboardingFlow
+export default OnboardingFlow;

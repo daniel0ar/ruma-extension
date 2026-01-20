@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react"
+import React, { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react"
 import type { Account, WalletState, TokenBalance, Transaction } from "@/lib/blockchain/types"
 import { SOL_TOKEN, USDC_TOKEN, WALLET_STATE_KEY, ONBOARDING_COMPLETE_KEY } from "@/lib/blockchain/constants"
 import { getRandomColor, generateAccountId } from "@/lib/blockchain/utils"

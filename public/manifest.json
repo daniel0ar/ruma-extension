@@ -3,10 +3,7 @@
   "name": "Ruma Wallet",
   "version": "1.0.0",
   "description": "Your secure gateway to the Solana blockchain",
-  "permissions": [
-    "storage",
-    "activeTab"
-  ],
+  "permissions": ["storage", "activeTab"],
   "background": {
     "service_worker": "service-worker.js"
   },

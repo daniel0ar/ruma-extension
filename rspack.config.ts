@@ -1,53 +1,57 @@
-import { defineConfig } from '@rspack/cli';
-import path from 'path';
+import { defineConfig } from "@rspack/cli";
+import path from "path";
 
 export default defineConfig({
-  mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
+  mode: process.env.NODE_ENV === "production" ? "production" : "development",
   entry: {
-    popup: './src/popup.tsx',
-    'service-worker': './src/service-worker.ts',
-    'content-script': './src/content-script.ts'
+    popup: "./src/popup.tsx",
+    "service-worker": "./src/service-worker.ts",
+    "content-script": "./src/content-script.ts",
   },
   output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: '[name].js',
-    clean: true
+    path: path.resolve(__dirname, "dist"),
+    filename: "[name].js",
+    clean: true,
   },
   resolve: {
-    extensions: ['.tsx', '.ts', '.js', '.jsx'],
+    extensions: [".tsx", ".ts", ".js", ".jsx"],
     alias: {
-      '@': path.resolve(__dirname, './'),
-      'components': path.resolve(__dirname, './components'),
-      'lib': path.resolve(__dirname, './lib'),
-      'contexts': path.resolve(__dirname, './contexts')
-    }
+      "@": path.resolve(__dirname, "./"),
+      components: path.resolve(__dirname, "./components"),
+      lib: path.resolve(__dirname, "./lib"),
+      contexts: path.resolve(__dirname, "./contexts"),
+    },
   },
   module: {
     rules: [
       {
         test: /\.tsx?$/,
-        use: 'builtin:swc-loader',
-        exclude: /node_modules/
+        use: "builtin:swc-loader",
+        exclude: /node_modules/,
       },
       {
         test: /\.css$/,
-        use: ['postcss-loader'],
-        type: "css"
-      }
-    ]
+        use: "postcss-loader",
+        type: "css",
+      },
+    ],
   },
   plugins: [
-    new (require('@rspack/core').HtmlRspackPlugin)({
-      template: './src/popup.html',
-      filename: 'popup.html',
-      chunks: ['popup']
+    new (require("@rspack/core").HtmlRspackPlugin)({
+      template: "./src/popup.html",
+      filename: "popup.html",
+      chunks: ["popup"],
+      inject: "body",
     }),
-    new (require('@rspack/core').CopyRspackPlugin)({
+    new (require("@rspack/core").CopyRspackPlugin)({
       patterns: [
-        { from: 'public/manifest.json', to: 'manifest.json' },
-        { from: 'public/*.png', to: '[name][ext]' },
-        { from: 'public/*.svg', to: '[name][ext]' }
-      ]
-    })
-  ]
+        { from: "public/manifest.json", to: "manifest.json" },
+        { from: "public/*.png", to: "[name][ext]" },
+        { from: "public/*.svg", to: "[name][ext]" },
+      ],
+    }),
+  ],
+  experiments: {
+    css: true,
+  },
 });

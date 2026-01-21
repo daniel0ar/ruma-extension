@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { WalletHeader } from "./wallet-header"
 import { BottomNav, type TabId } from "./bottom-nav"
 import { HomeTab } from "./home-tab"
@@ -13,6 +13,7 @@ import { DepositModal } from "./modals/deposit-modal"
 import { WithdrawModal } from "./modals/withdraw-modal"
 import { useWallet } from "@/contexts/wallet-context"
 import { cn } from "@/lib/utils"
+import { useThemeMode } from "@/hooks/use-theme-mode"
 
 export function WalletShell() {
   const { isPrivateMode } = useWallet()
@@ -23,14 +24,7 @@ export function WalletShell() {
   const [showWithdraw, setShowWithdraw] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
 
-  // Apply dark class when in private mode
-  useEffect(() => {
-    if (isPrivateMode) {
-      document.documentElement.classList.add("dark")
-    } else {
-      document.documentElement.classList.remove("dark")
-    }
-  }, [isPrivateMode])
+  useThemeMode(isPrivateMode)
 
   return (
     <div

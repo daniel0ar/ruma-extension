@@ -1,11 +1,10 @@
-import { Buffer } from 'buffer';
+import { Buffer } from "buffer";
 
 // Make Buffer available globally
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   window.Buffer = Buffer;
 }
 
-import React from "react";
 import { createRoot } from "react-dom/client";
 
 import { WalletProvider } from "../contexts/wallet-context";

@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react"
+import React, { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from "react"
 import type { Account, WalletState, TokenBalance, Transaction } from "@/lib/blockchain/types"
 import { SOL_TOKEN, USDC_TOKEN, WALLET_STATE_KEY, ONBOARDING_COMPLETE_KEY } from "@/lib/blockchain/constants"
 import { getRandomColor, generateAccountId } from "@/lib/blockchain/utils"
@@ -34,40 +34,23 @@ interface WalletContextType {
 const WalletContext = createContext<WalletContextType | undefined>(undefined)
 
 async function deriveKeypairFromMnemonic(mnemonic: string, accountIndex = 0): Promise<Keypair> {
-  // Convert mnemonic to seed using PBKDF2 (BIP39 standard)
-  const encoder = new TextEncoder()
-  const mnemonicBuffer = encoder.encode(mnemonic.normalize("NFKD"))
-  const saltBuffer = encoder.encode(`mnemonic`.normalize("NFKD"))
-
-  const keyMaterial = await crypto.subtle.importKey("raw", mnemonicBuffer, "PBKDF2", false, ["deriveBits"])
-
-  const derivedBits = await crypto.subtle.deriveBits(
-    {
-      name: "PBKDF2",
-      salt: saltBuffer,
-      iterations: 2048,
-      hash: "SHA-512",
-    },
-    keyMaterial,
-    512,
-  )
-
+  // Use bip39 to convert mnemonic to seed
+  const seed = bip39.mnemonicToSeedSync(mnemonic)
+  
   // Use first 32 bytes as seed, combined with account index for derivation
-  const seedArray = new Uint8Array(derivedBits)
-  const seed = seedArray.slice(0, 32)
+  const seedArray = new Uint8Array(seed)
+  let finalSeed = seedArray.slice(0, 32)
 
   // If accountIndex > 0, derive a child key by hashing seed with index
   if (accountIndex > 0) {
     const indexBuffer = new Uint8Array(4)
     new DataView(indexBuffer.buffer).setUint32(0, accountIndex, true)
-    const combined = new Uint8Array([...seed, ...indexBuffer])
+    const combined = new Uint8Array([...finalSeed, ...indexBuffer])
     const hashBuffer = await crypto.subtle.digest("SHA-256", combined)
-    const childSeed = new Uint8Array(hashBuffer)
-    const childKeypair = nacl.sign.keyPair.fromSeed(childSeed)
-    return Keypair.fromSecretKey(childKeypair.secretKey)
+    finalSeed = new Uint8Array(hashBuffer)
   }
 
-  const keypair = nacl.sign.keyPair.fromSeed(seed)
+  const keypair = nacl.sign.keyPair.fromSeed(finalSeed)
   return Keypair.fromSecretKey(keypair.secretKey)
 }
 

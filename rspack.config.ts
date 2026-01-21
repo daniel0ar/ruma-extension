@@ -42,6 +42,9 @@ export default defineConfig({
   },
   plugins: [
     new (require("@rspack/core").ProvidePlugin)({
+      React: "react",
+    }),
+    new (require("@rspack/core").ProvidePlugin)({
       Buffer: ['buffer', 'Buffer'],
     }),
     new (require("@rspack/core").HtmlRspackPlugin)({

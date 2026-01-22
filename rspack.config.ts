@@ -41,6 +41,10 @@ export default defineConfig({
         use: "postcss-loader",
         type: "css",
       },
+      {
+        test: /\.wasm$/,
+        type: 'asset/resource',
+      },
     ],
   },
   plugins: [
@@ -75,5 +79,6 @@ export default defineConfig({
   ],
   experiments: {
     css: true,
+    asyncWebAssembly: true,
   },
 });

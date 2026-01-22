@@ -29,6 +29,12 @@ import * as bip39 from "bip39";
 import { Keypair } from "@solana/web3.js";
 import bs58 from "bs58";
 import nacl from "tweetnacl";
+import {
+  ShadowWireClient,
+  initWASM,
+  isWASMSupported,
+  WASMNotSupportedError
+} from '@radr/shadowwire';
 
 interface WalletContextType {
   // State
@@ -52,6 +58,10 @@ interface WalletContextType {
   refreshBalances: () => Promise<void>;
   refreshTransactions: () => Promise<void>;
   completeOnboarding: (account: Account) => void;
+
+  //Shadowwire
+  shadowWireClient: ShadowWireClient | null;
+  isShadowWireInitialized: boolean;
 }
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -111,6 +121,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  const [shadowWireClient, setShadowWireClient] = useState<ShadowWireClient | null>(null);
+  const [isShadowWireInitialized, setIsShadowWireInitialized] = useState(false);
+
   const activeAccount =
     state.accounts.find((a) => a.id === state.activeAccountId) || null;
 
@@ -121,9 +134,51 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, [state]);
 
-  // Fetch real balances from devnet (only in non-private mode)
+  const fetchShadowWireBalances = async(address: string) => {
+    if (!shadowWireClient) {
+      console.error("Shadowwire client not initialized")
+      return {sol: 0, usdc: 0};
+    }
+    try {
+      const balance = await shadowWireClient.getBalance(address, "SOL");
+      const [sol, usdc] = [balance.available / 1e9, 0] // TODO: Fetch USDC or USD1 balance and use Promise.all
+      return { sol, usdc };
+    } catch (error) {
+      console.error("Failed to fetch ShadowWire balances:", error);
+    }
+  }
+
+  useEffect(() => {
+      if (isShadowWireInitialized) return;
+
+      async function initShadowWire() {
+        try {
+          // Initialize WASM if in private mode
+          if (state.isPrivateMode && !isWASMSupported()) {
+            throw new WASMNotSupportedError();
+          }
+
+          const client = new ShadowWireClient({
+            debug: true // TODO: remove for production
+          });
+
+          if (state.isPrivateMode && isWASMSupported()) {
+            await initWASM('/wasm/settler_wasm_bg.wasm');
+          }
+
+          setShadowWireClient(client);
+          setIsShadowWireInitialized(true);
+        } catch (error) {
+          console.error("Failed to initialize ShadowWire:", error);
+        }
+      }
+
+      initShadowWire();
+    }, [state.isPrivateMode, isShadowWireInitialized]);
+
+  // Fetch real balances from mainnet and shadowwire (private mode)
   const refreshBalances = useCallback(async () => {
-    if (!activeAccount || state.isPrivateMode) {
+    if (!activeAccount) {
       setBalances([
         { token: SOL_TOKEN, balance: 0, usdValue: 0 },
         { token: USDC_TOKEN, balance: 0, usdValue: 0 },
@@ -133,8 +188,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      // Fetch real balances from Solana devnet
-      const { sol, usdc } = await getAllBalances(activeAccount.address);
+      // Fetch real balances from Solana mainnet
+      let sol: number | undefined;
+      let usdc: number | undefined;
+
+      if (state.isPrivateMode) {
+        ({ sol, usdc } = await fetchShadowWireBalances(activeAccount.address));
+      }
+
+      ({ sol, usdc } = await getAllBalances(activeAccount.address));
 
       // Fetch prices from CoinGecko
       let solPrice = 0;
@@ -295,6 +357,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         refreshBalances,
         refreshTransactions,
         completeOnboarding,
+        shadowWireClient,
+        isShadowWireInitialized
       }}
     >
       {children}

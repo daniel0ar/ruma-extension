@@ -1,5 +1,8 @@
 import { defineConfig } from "@rspack/cli";
 import path from "path";
+import { config } from "dotenv";
+
+config();
 
 export default defineConfig({
   mode: process.env.NODE_ENV === "production" ? "production" : "development",
@@ -23,7 +26,7 @@ export default defineConfig({
       contexts: path.resolve(__dirname, "./contexts"),
     },
     fallback: {
-      buffer: require.resolve('buffer'),
+      buffer: require.resolve("buffer"),
     },
   },
   module: {
@@ -45,7 +48,10 @@ export default defineConfig({
       React: "react",
     }),
     new (require("@rspack/core").ProvidePlugin)({
-      Buffer: ['buffer', 'Buffer'],
+      Buffer: ["buffer", "Buffer"],
+    }),
+    new (require("@rspack/core").DefinePlugin)({
+      "process.env.SOLANA_RPC_URL": JSON.stringify(process.env.SOLANA_RPC_URL),
     }),
     new (require("@rspack/core").HtmlRspackPlugin)({
       template: "./src/popup.html",

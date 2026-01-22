@@ -1,27 +1,25 @@
-import type { Token } from "./types"
+import type { Token } from "./types";
 
-// Solana devnet tokens
 export const SOL_TOKEN: Token = {
   symbol: "SOL",
   name: "Solana",
   mint: "So11111111111111111111111111111111111111112",
   decimals: 9,
   logoUrl: "/tokens/sol.svg",
-}
+};
 
-// Devnet USDC (use official devnet USDC faucet mint)
 export const USDC_TOKEN: Token = {
   symbol: "USDC",
   name: "USD Coin",
-  mint: "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU", // Devnet USDC
+  mint: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
   decimals: 6,
   logoUrl: "/tokens/usdc.svg",
-}
+};
 
-export const SUPPORTED_TOKENS = [SOL_TOKEN, USDC_TOKEN]
+export const SUPPORTED_TOKENS = [SOL_TOKEN, USDC_TOKEN];
 
 // Price API endpoints
-export const COINGECKO_API = "https://api.coingecko.com/api/v3"
+export const COINGECKO_API = "https://api.coingecko.com/api/v3";
 
 // Account avatar colors
 export const AVATAR_COLORS = [
@@ -37,8 +35,8 @@ export const AVATAR_COLORS = [
   "#f97316",
   "#6366f1",
   "#14b8a6",
-]
+];
 
 // Onboarding storage key
-export const ONBOARDING_COMPLETE_KEY = "solana_wallet_onboarding_complete"
-export const WALLET_STATE_KEY = "solana_wallet_state"
+export const ONBOARDING_COMPLETE_KEY = "solana_wallet_onboarding_complete";
+export const WALLET_STATE_KEY = "solana_wallet_state";

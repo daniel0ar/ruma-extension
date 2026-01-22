@@ -1,28 +1,27 @@
 // Solana devnet RPC client using Quicknode
 // Environment variable: NEXT_PUBLIC_QUICKNODE_RPC_URL
 
-import { SOL_TOKEN, USDC_TOKEN } from "./constants"
-import type { Transaction } from "./types"
+import { SOL_TOKEN, USDC_TOKEN } from "./constants";
+import type { Transaction } from "./types";
 
 const FALLBACK_RPC_URLS = [
-  "https://devnet.helius-rpc.com/?api-key=1d8740dc-e5f4-421c-b823-e1bad1889eff", // Free Helius devnet
-  "https://rpc.ankr.com/solana_devnet", // Ankr public devnet
-]
-
-let currentFallbackIndex = 0
+  "https://api.mainnet.solana.com", // Solana public mainnet rpc
+].filter(Boolean); // Remove empty strings
 
 function getRpcUrl(): string {
-  return process.env.NEXT_PUBLIC_QUICKNODE_RPC_URL || ""
+  return process.env.SOLANA_RPC_URL || "";
 }
 
 async function rpcCall<T>(method: string, params: unknown[]): Promise<T> {
-  const primaryUrl = getRpcUrl()
-  const urlsToTry = primaryUrl ? [primaryUrl, ...FALLBACK_RPC_URLS] : FALLBACK_RPC_URLS
+  const primaryUrl = getRpcUrl();
+  const urlsToTry = primaryUrl
+    ? [primaryUrl, ...FALLBACK_RPC_URLS]
+    : FALLBACK_RPC_URLS;
 
-  let lastError: Error | null = null
+  let lastError: Error | null = null;
 
   for (let i = 0; i < urlsToTry.length; i++) {
-    const url = urlsToTry[i]
+    const url = urlsToTry[i];
     try {
       const response = await fetch(url, {
         method: "POST",
@@ -33,42 +32,41 @@ async function rpcCall<T>(method: string, params: unknown[]): Promise<T> {
           method,
           params,
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json()
+      const data = await response.json();
       if (data.error) {
-        throw new Error(data.error.message || "RPC error")
+        throw new Error(data.error.message || "RPC error");
       }
 
-      if (i > 0 && !primaryUrl) {
-        currentFallbackIndex = i - 1
-      }
-
-      return data.result
+      return data.result;
     } catch (error) {
-      lastError = error as Error
-      console.warn(`RPC call to ${url} failed:`, error)
+      lastError = error as Error;
+      console.warn(`RPC call to ${url} failed:`, error);
     }
   }
 
-  throw lastError || new Error("All RPC endpoints failed")
+  throw lastError || new Error("All RPC endpoints failed");
 }
 
 export async function getSolBalance(address: string): Promise<number> {
   try {
-    const result = await rpcCall<{ value: number }>("getBalance", [address])
-    return result.value / 1e9 // Convert lamports to SOL
+    const result = await rpcCall<{ value: number }>("getBalance", [address]);
+    return result.value / 1e9; // Convert lamports to SOL
   } catch (error) {
-    console.error("Failed to get SOL balance:", error)
-    return 0
+    console.error("Failed to get SOL balance:", error);
+    return 0;
   }
 }
 
-export async function getTokenBalance(address: string, mintAddress: string): Promise<number> {
+export async function getTokenBalance(
+  address: string,
+  mintAddress: string,
+): Promise<number> {
   try {
     const result = await rpcCall<{
       value: Array<{
@@ -77,100 +75,126 @@ export async function getTokenBalance(address: string, mintAddress: string): Pro
             parsed: {
               info: {
                 tokenAmount: {
-                  uiAmount: number
-                }
-              }
-            }
-          }
-        }
-      }>
-    }>("getTokenAccountsByOwner", [address, { mint: mintAddress }, { encoding: "jsonParsed" }])
+                  uiAmount: number;
+                };
+              };
+            };
+          };
+        };
+      }>;
+    }>("getTokenAccountsByOwner", [
+      address,
+      { mint: mintAddress },
+      { encoding: "jsonParsed" },
+    ]);
 
     if (result.value && result.value.length > 0) {
-      return result.value[0].account.data.parsed.info.tokenAmount.uiAmount || 0
+      return result.value[0].account.data.parsed.info.tokenAmount.uiAmount || 0;
     }
-    return 0
+    return 0;
   } catch (error) {
-    console.error("Failed to get token balance:", error)
-    return 0
+    console.error("Failed to get token balance:", error);
+    return 0;
   }
 }
 
-export async function getAllBalances(address: string): Promise<{ sol: number; usdc: number }> {
-  const [sol, usdc] = await Promise.all([getSolBalance(address), getTokenBalance(address, USDC_TOKEN.mint)])
-  return { sol, usdc }
+export async function getAllBalances(
+  address: string,
+): Promise<{ sol: number; usdc: number }> {
+  const [sol, usdc] = await Promise.all([
+    getSolBalance(address),
+    getTokenBalance(address, USDC_TOKEN.mint),
+  ]);
+  return { sol, usdc };
 }
 
-export async function getTransactions(address: string, limit = 10): Promise<Transaction[]> {
+export async function getTransactions(
+  address: string,
+  limit = 10,
+): Promise<Transaction[]> {
   try {
     const signatures = await rpcCall<
       Array<{
-        signature: string
-        blockTime: number | null
-        err: unknown
+        signature: string;
+        blockTime: number | null;
+        err: unknown;
       }>
-    >("getSignaturesForAddress", [address, { limit }])
+    >("getSignaturesForAddress", [address, { limit }]);
 
     if (!signatures || signatures.length === 0) {
-      return []
+      return [];
     }
 
-    const transactions: Transaction[] = []
+    const transactions: Transaction[] = [];
 
     for (const sig of signatures.slice(0, limit)) {
       try {
         const tx = await rpcCall<{
-          blockTime: number | null
+          blockTime: number | null;
           meta: {
-            preBalances: number[]
-            postBalances: number[]
-            err: unknown
-          } | null
+            preBalances: number[];
+            postBalances: number[];
+            err: unknown;
+          } | null;
           transaction: {
             message: {
-              accountKeys: string[]
-            }
-          }
-        } | null>("getTransaction", [sig.signature, { encoding: "json", maxSupportedTransactionVersion: 0 }])
+              accountKeys: string[];
+            };
+          };
+        } | null>("getTransaction", [
+          sig.signature,
+          { encoding: "json", maxSupportedTransactionVersion: 0 },
+        ]);
 
         if (tx && tx.meta) {
-          const accountKeys = tx.transaction.message.accountKeys
-          const preBalances = tx.meta.preBalances
-          const postBalances = tx.meta.postBalances
+          const accountKeys = tx.transaction.message.accountKeys;
+          const preBalances = tx.meta.preBalances;
+          const postBalances = tx.meta.postBalances;
 
-          const addressIndex = accountKeys.findIndex((key: string) => key === address)
+          const addressIndex = accountKeys.findIndex(
+            (key: string) => key === address,
+          );
 
           if (addressIndex !== -1) {
-            const balanceChange = (postBalances[addressIndex] - preBalances[addressIndex]) / 1e9
-            const isReceive = balanceChange > 0
+            const balanceChange =
+              (postBalances[addressIndex] - preBalances[addressIndex]) / 1e9;
+            const isReceive = balanceChange > 0;
 
             transactions.push({
               signature: sig.signature,
-              timestamp: (tx.blockTime || sig.blockTime || Date.now() / 1000) * 1000,
+              timestamp:
+                (tx.blockTime || sig.blockTime || Date.now() / 1000) * 1000,
               type: isReceive ? "receive" : "send",
               amount: Math.abs(balanceChange),
               token: SOL_TOKEN,
-              from: isReceive ? (accountKeys[0] !== address ? accountKeys[0] : accountKeys[1] || address) : address,
+              from: isReceive
+                ? accountKeys[0] !== address
+                  ? accountKeys[0]
+                  : accountKeys[1] || address
+                : address,
               to: isReceive ? address : accountKeys[1] || accountKeys[0],
               status: sig.err ? "failed" : "confirmed",
-              fee: tx.meta.preBalances[0] - tx.meta.postBalances[0] > 0 ? 0.000005 : undefined,
+              fee:
+                tx.meta.preBalances[0] - tx.meta.postBalances[0] > 0
+                  ? 0.000005
+                  : undefined,
               blockTime: tx.blockTime || undefined,
-            })
+            });
           }
         }
       } catch (txError) {
-        console.error("Failed to fetch transaction:", sig.signature, txError)
+        console.error("Failed to fetch transaction:", sig.signature, txError);
       }
     }
 
-    return transactions
+    return transactions;
   } catch (error) {
-    console.error("Failed to get transactions:", error)
-    return []
+    console.error("Failed to get transactions:", error);
+    return [];
   }
 }
 
 export function isValidSolanaAddress(address: string): boolean {
-  const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
-  return base58Regex.test(address)
+  const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+  return base58Regex.test(address);
 }

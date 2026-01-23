@@ -9,6 +9,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Transaction } from "@solana/web3.js";
+import { sendSignedTransaction } from "@/lib/blockchain/solana-client";
 
 interface PrivateDepositModalProps {
   open: boolean;
@@ -19,7 +21,8 @@ export function PrivateDepositModal({
   open,
   onOpenChange,
 }: PrivateDepositModalProps) {
-  const { activeAccount, shadowWireClient, isPrivateMode } = useWallet();
+  const { activeAccount, shadowWireClient, isPrivateMode, signTransaction } =
+    useWallet();
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,10 +39,14 @@ export function PrivateDepositModal({
         amount: parseFloat(amount) * 1e9, // Convert to lamports
       });
 
-      // In a real implementation, you would:
-      // 1. Sign the transaction with the wallet
-      // 2. Send it to the blockchain
-      // 3. Update local state
+      const unsignedTx = Transaction.from(
+        Buffer.from(depositTx.unsigned_tx_base64, "base64"),
+      );
+
+      // Sign with the active account's keypair
+      const signedTx = await signTransaction(unsignedTx);
+      // Send to Solana
+      await sendSignedTransaction(signedTx); // Argument of type 'void' is not assignable to parameter of type 'Transaction'.
 
       console.log("Deposit transaction created:", depositTx);
       alert("Deposit transaction created! Sign it in your wallet.");

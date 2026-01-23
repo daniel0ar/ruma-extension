@@ -3,6 +3,7 @@
 
 import { SOL_TOKEN, USDC_TOKEN } from "./constants";
 import type { Transaction } from "./types";
+import { Transaction as SolanaTransaction } from "@solana/web3.js";
 
 const FALLBACK_RPC_URLS = [
   "https://api.mainnet.solana.com", // Solana public mainnet rpc
@@ -197,4 +198,15 @@ export async function getTransactions(
 export function isValidSolanaAddress(address: string): boolean {
   const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
   return base58Regex.test(address);
+}
+
+export async function sendSignedTransaction(signedTx: SolanaTransaction) {
+  const serializedTx = signedTx.serialize(); //Property serialize does not exist on type Transaction. (ts 2339)
+  const txBase64 = serializedTx.toString("base64");
+
+  // Send via RPC
+  const result = await rpcCall<{ signature: string }>("sendTransaction", [
+    txBase64,
+  ]);
+  return result.signature;
 }

@@ -26,7 +26,7 @@ import {
   getTransactions as fetchSolanaTransactions,
 } from "@/lib/blockchain/solana-client";
 import * as bip39 from "bip39";
-import { Keypair } from "@solana/web3.js";
+import { Keypair, Transaction as SolanaTransaction } from "@solana/web3.js";
 import bs58 from "bs58";
 import nacl from "tweetnacl";
 import {
@@ -58,11 +58,14 @@ interface WalletContextType {
   refreshBalances: () => Promise<void>;
   refreshTransactions: () => Promise<void>;
   completeOnboarding: (account: Account) => void;
+  signTransaction: (tx: SolanaTransaction) => Promise<SolanaTransaction>;
 
   //Shadowwire
   shadowWireClient: ShadowWireClient | null;
   isShadowWireInitialized: boolean;
 }
+
+const keypairStore = new Map<string, Keypair>();
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
@@ -146,6 +149,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       return { sol, usdc };
     } catch (error) {
       console.error("Failed to fetch ShadowWire balances:", error);
+      return { sol: 0, usdc: 0 };
     }
   };
 
@@ -274,6 +278,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       isImported: false,
     };
 
+    keypairStore.set(newAccount.id, keypair);
+
     setState((prev) => ({
       ...prev,
       accounts: [...prev.accounts, newAccount],
@@ -308,6 +314,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         isImported: true,
       };
 
+      keypairStore.set(newAccount.id, keypair);
+
       setState((prev) => ({
         ...prev,
         accounts: [...prev.accounts, newAccount],
@@ -340,6 +348,24 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const signTransaction = useCallback(
+    async (tx: SolanaTransaction) => {
+      if (!activeAccount) {
+        throw new Error("No active account");
+      }
+
+      const keypair = keypairStore.get(activeAccount.id);
+      if (!keypair) {
+        throw new Error("Signing key not found");
+      }
+
+      tx.feePayer = keypair.publicKey;
+      tx.partialSign(keypair);
+      return tx;
+    },
+    [activeAccount],
+  );
+
   return (
     <WalletContext.Provider
       value={{
@@ -360,6 +386,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         completeOnboarding,
         shadowWireClient,
         isShadowWireInitialized,
+        signTransaction,
       }}
     >
       {children}

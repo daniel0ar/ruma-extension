@@ -33,8 +33,8 @@ import {
   ShadowWireClient,
   initWASM,
   isWASMSupported,
-  WASMNotSupportedError
-} from '@radr/shadowwire';
+  WASMNotSupportedError,
+} from "@radr/shadowwire";
 
 interface WalletContextType {
   // State
@@ -121,7 +121,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [shadowWireClient, setShadowWireClient] = useState<ShadowWireClient | null>(null);
+  const [shadowWireClient, setShadowWireClient] =
+    useState<ShadowWireClient | null>(null);
   const [isShadowWireInitialized, setIsShadowWireInitialized] = useState(false);
 
   const activeAccount =
@@ -134,47 +135,47 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, [state]);
 
-  const fetchShadowWireBalances = async(address: string) => {
+  const fetchShadowWireBalances = async (address: string) => {
     if (!shadowWireClient) {
-      console.error("Shadowwire client not initialized")
-      return {sol: 0, usdc: 0};
+      console.error("Shadowwire client not initialized");
+      return { sol: 0, usdc: 0 };
     }
     try {
       const balance = await shadowWireClient.getBalance(address, "SOL");
-      const [sol, usdc] = [balance.available / 1e9, 0] // TODO: Fetch USDC or USD1 balance and use Promise.all
+      const [sol, usdc] = [balance.available / 1e9, 0]; // TODO: Fetch USDC or USD1 balance and use Promise.all
       return { sol, usdc };
     } catch (error) {
       console.error("Failed to fetch ShadowWire balances:", error);
     }
-  }
+  };
 
   useEffect(() => {
-      if (isShadowWireInitialized) return;
+    if (isShadowWireInitialized) return;
 
-      async function initShadowWire() {
-        try {
-          // Initialize WASM if in private mode
-          if (state.isPrivateMode && !isWASMSupported()) {
-            throw new WASMNotSupportedError();
-          }
-
-          const client = new ShadowWireClient({
-            debug: true // TODO: remove for production
-          });
-
-          if (state.isPrivateMode && isWASMSupported()) {
-            await initWASM('/wasm/settler_wasm_bg.wasm');
-          }
-
-          setShadowWireClient(client);
-          setIsShadowWireInitialized(true);
-        } catch (error) {
-          console.error("Failed to initialize ShadowWire:", error);
+    async function initShadowWire() {
+      try {
+        // Initialize WASM if in private mode
+        if (state.isPrivateMode && !isWASMSupported()) {
+          throw new WASMNotSupportedError();
         }
-      }
 
-      initShadowWire();
-    }, [state.isPrivateMode, isShadowWireInitialized]);
+        const client = new ShadowWireClient({
+          debug: true, // TODO: remove for production
+        });
+
+        if (state.isPrivateMode && isWASMSupported()) {
+          await initWASM("wasm/settler_wasm_bg.wasm");
+        }
+
+        setShadowWireClient(client);
+        setIsShadowWireInitialized(true);
+      } catch (error) {
+        console.error("Failed to initialize ShadowWire:", error);
+      }
+    }
+
+    initShadowWire();
+  }, [state.isPrivateMode, isShadowWireInitialized]);
 
   // Fetch real balances from mainnet and shadowwire (private mode)
   const refreshBalances = useCallback(async () => {
@@ -358,7 +359,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         refreshTransactions,
         completeOnboarding,
         shadowWireClient,
-        isShadowWireInitialized
+        isShadowWireInitialized,
       }}
     >
       {children}

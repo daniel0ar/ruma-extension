@@ -2,15 +2,23 @@ import { useWallet } from "@/contexts/wallet-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { DialogHeader } from "@/components/ui/dialog";
-import { Dialog, DialogContent, DialogTitle } from "@radix-ui/react-dialog";
+import {
+  Dialog,
+  DialogHeader,
+  DialogContent,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 interface PrivateDepositModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export function PrivateDepositModal({ open, onOpenChange }: PrivateDepositModalProps) {
+export function PrivateDepositModal({
+  open,
+  onOpenChange,
+}: PrivateDepositModalProps) {
   const { activeAccount, shadowWireClient, isPrivateMode } = useWallet();
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -55,9 +63,13 @@ export function PrivateDepositModal({ open, onOpenChange }: PrivateDepositModalP
           </p>
 
           {/* QR Code Placeholder */}
-          <div className="space-y-2">
+          <div className="flex flex-col gap-4">
+            <Label htmlFor="amount">Recipient Address</Label>
             <Input
+              id="amount"
               type="number"
+              step=".1"
+              min={0.1}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="Amount in SOL"
@@ -67,7 +79,7 @@ export function PrivateDepositModal({ open, onOpenChange }: PrivateDepositModalP
               onClick={handleDeposit}
               disabled={!amount || isLoading || !isPrivateMode}
             >
-              {isLoading ? "Processing..." : "Deposit Privately"}
+              {isLoading ? "Processing..." : "Deposit"}
             </Button>
           </div>
 

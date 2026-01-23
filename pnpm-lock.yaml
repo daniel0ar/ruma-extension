@@ -93,8 +93,8 @@ importers:
         specifier: 1.1.6
         version: 1.1.6(@types/react-dom@19.0.0)(@types/react@19.0.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@radr/shadowwire':
-        specifier: ^1.1.2
-        version: 1.1.2(bufferutil@4.1.0)(typescript@5.0.2)(utf-8-validate@5.0.10)
+        specifier: ^1.1.15
+        version: 1.1.15(bufferutil@4.1.0)(typescript@5.0.2)(utf-8-validate@5.0.10)
       '@solana/web3.js':
         specifier: 1.98.4
         version: 1.98.4(bufferutil@4.1.0)(typescript@5.0.2)(utf-8-validate@5.0.10)
@@ -1013,8 +1013,8 @@ packages:
   '@radix-ui/rect@1.1.0':
     resolution: {integrity: sha512-A9+lCBZoaMJlVKcRBz2YByCG+Cp2t6nAnMnNba+XiWxnj6r4JUFqfsgwocMBZU9LPtdxC6wB56ySYpc7LQIoJg==}
 
-  '@radr/shadowwire@1.1.2':
-    resolution: {integrity: sha512-AJg43oDnSLZ+eVQ3xswyLljJjmPugDws3/gXnq5HqOkmEbzhPdTc7l/OQA14Xjr2TJtkjiUoz3urgXXvtbtxMQ==}
+  '@radr/shadowwire@1.1.15':
+    resolution: {integrity: sha512-GsCVMq5VXTF/RQRabD6IEGTaMYxkKOoL+C7tjDQhny0CcniYF8f+/d462jWkzWZ9B3KvlGcPHyo8qmT1neniqQ==}
 
   '@rspack/binding-darwin-arm64@1.7.2':
     resolution: {integrity: sha512-EsmfzNZnuEhVPMX5jWATCHT2UCCBh6iqq448xUMmASDiKVbIOhUTN1ONTV+aMERYl7BgMNJn0iTis6ot2GWKIg==}
@@ -3686,7 +3686,7 @@ snapshots:
 
   '@radix-ui/rect@1.1.0': {}
 
-  '@radr/shadowwire@1.1.2(bufferutil@4.1.0)(typescript@5.0.2)(utf-8-validate@5.0.10)':
+  '@radr/shadowwire@1.1.15(bufferutil@4.1.0)(typescript@5.0.2)(utf-8-validate@5.0.10)':
     dependencies:
       '@solana/web3.js': 1.98.4(bufferutil@4.1.0)(typescript@5.0.2)(utf-8-validate@5.0.10)
       bs58: 5.0.0

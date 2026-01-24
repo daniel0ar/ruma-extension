@@ -11,27 +11,33 @@ import {
 import { Label } from "@/components/ui/label";
 import { Transaction } from "@solana/web3.js";
 import { sendSignedTransaction } from "@/lib/blockchain/solana-client";
+import { X, Check } from "lucide-react";
 
 interface PrivateDepositModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
 export function PrivateDepositModal({
   open,
   onOpenChange,
+  onSuccess,
 }: PrivateDepositModalProps) {
   const { activeAccount, shadowWireClient, isPrivateMode, signTransaction } =
     useWallet();
   const [amount, setAmount] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "success" | "error"
+  >("idle");
+  const [signature, setSignature] = useState<string | null>(null);
 
   const handleDeposit = async () => {
     if (!activeAccount || !shadowWireClient || !isPrivateMode) return;
 
     try {
-      setIsLoading(true);
+      setStatus("loading");
       setError(null);
 
       const depositTx = await shadowWireClient.deposit({
@@ -45,53 +51,89 @@ export function PrivateDepositModal({
 
       // Sign with the active account's keypair
       const signedTx = await signTransaction(unsignedTx);
-      // Send to Solana
-      await sendSignedTransaction(signedTx); // Argument of type 'void' is not assignable to parameter of type 'Transaction'.
+      const txSignature = await sendSignedTransaction(signedTx);
+      setSignature(txSignature);
 
-      console.log("Deposit transaction created:", depositTx);
-      alert("Deposit transaction created! Sign it in your wallet.");
+      setStatus("success");
+      setAmount("");
     } catch (err) {
+      console.error(err);
       setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setIsLoading(false);
+      setStatus("error");
+    }
+  };
+
+  const handleVerify = () => {
+    if (signature) {
+      window.open(`https://solscan.io/tx/${signature}`, "_blank");
+      if (onSuccess) onSuccess();
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[340px]">
-        <DialogHeader>
-          <DialogTitle>Private Deposit</DialogTitle>
-        </DialogHeader>
-
-        <div className="flex flex-col items-center gap-4">
-          <p className="text-sm text-muted-foreground text-center">
-            Send SOL to your private pool
-          </p>
-
-          {/* QR Code Placeholder */}
-          <div className="flex flex-col gap-4">
-            <Label htmlFor="amount">Recipient Address</Label>
-            <Input
-              id="amount"
-              type="number"
-              step=".1"
-              min={0.1}
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Amount in SOL"
-              disabled={!isPrivateMode || !shadowWireClient}
-            />
+        {status === "error" ? (
+          <div className="flex flex-col items-center gap-4">
+            <X className="h-12 w-12 text-destructive" />
+            <h3 className="text-lg font-semibold">Failed deposit</h3>
+            <p className="text-sm text-destructive">{error}</p>
             <Button
-              onClick={handleDeposit}
-              disabled={!amount || isLoading || !isPrivateMode}
+              onClick={() => {
+                setStatus("idle");
+                onOpenChange(false);
+                setTimeout(() => onOpenChange(true), 10);
+              }}
+              className="mt-4"
             >
-              {isLoading ? "Processing..." : "Deposit"}
+              Try again
             </Button>
           </div>
+        ) : status === "success" ? (
+          <div className="flex flex-col items-center gap-4">
+            <Check className="h-12 w-12 text-green-500" />
+            <h3 className="text-lg font-semibold">Deposit successful</h3>
+            <Button onClick={handleVerify} className="mt-4">
+              Verify
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              The pool you deposited to is private on the transaction history
+            </p>
+          </div>
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>Private Deposit</DialogTitle>
+            </DialogHeader>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
-        </div>
+            <div className="flex flex-col items-center gap-4">
+              <p className="text-sm text-muted-foreground text-center">
+                Send SOL to your private pool
+              </p>
+
+              <div className="flex flex-col gap-4 w-full">
+                <Label htmlFor="amount">Amount in SOL</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  step=".1"
+                  min={0.1}
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  disabled={!isPrivateMode || !shadowWireClient}
+                />
+                <Button
+                  onClick={handleDeposit}
+                  disabled={!amount || status === "loading" || !isPrivateMode}
+                  className="w-full"
+                >
+                  {status === "loading" ? "Processing..." : "Deposit"}
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

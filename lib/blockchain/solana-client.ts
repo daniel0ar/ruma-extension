@@ -201,7 +201,7 @@ export function isValidSolanaAddress(address: string): boolean {
 }
 
 export async function sendSignedTransaction(signedTx: SolanaTransaction) {
-  const serializedTx = signedTx.serialize(); //Property serialize does not exist on type Transaction. (ts 2339)
+  const serializedTx = signedTx.serialize();
   const txBase64 = serializedTx.toString("base64");
 
   // Send via RPC

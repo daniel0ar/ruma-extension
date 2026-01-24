@@ -65,7 +65,50 @@ interface WalletContextType {
   isShadowWireInitialized: boolean;
 }
 
-const keypairStore = new Map<string, Keypair>();
+const STORE_NAME = "ruma-keypairs";
+
+async function initBrowserDB() {
+  return new Promise<void>((resolve) => {
+    const transaction = indexedDB.open("WalletDB", 1);
+    transaction.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      db.createObjectStore(STORE_NAME);
+    };
+    transaction.onsuccess = () => resolve();
+  });
+}
+
+async function getKeypairFromStorage(
+  accountId: string,
+): Promise<Keypair | null> {
+  return new Promise((resolve) => {
+    const transaction = indexedDB.open("WalletDB", 1);
+    transaction.onsuccess = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      const tx = db.transaction(STORE_NAME, "readonly");
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.get(accountId);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => resolve(null);
+    };
+  });
+}
+
+async function storeKeypair(
+  accountId: string,
+  keypair: Keypair,
+): Promise<void> {
+  return new Promise((resolve) => {
+    const transaction = indexedDB.open("WalletDB", 1);
+    transaction.onsuccess = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      store.put((keypair as any)._keypair, accountId); // TODO: Check why _keypair object exists inside Keypair
+      tx.oncomplete = () => resolve();
+    };
+  });
+}
 
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
@@ -137,6 +180,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       localStorage.setItem(WALLET_STATE_KEY, JSON.stringify(state));
     }
   }, [state]);
+
+  useEffect(() => {
+    initBrowserDB();
+  }, []);
 
   const fetchShadowWireBalances = async (address: string) => {
     if (!shadowWireClient) {
@@ -278,7 +325,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       isImported: false,
     };
 
-    keypairStore.set(newAccount.id, keypair);
+    await storeKeypair(newAccount.id, keypair);
 
     setState((prev) => ({
       ...prev,
@@ -314,7 +361,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         isImported: true,
       };
 
-      keypairStore.set(newAccount.id, keypair);
+      await storeKeypair(newAccount.id, keypair);
 
       setState((prev) => ({
         ...prev,
@@ -353,14 +400,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       if (!activeAccount) {
         throw new Error("No active account");
       }
-
-      const keypair = keypairStore.get(activeAccount.id);
+      const keypair = await getKeypairFromStorage(activeAccount.id);
       if (!keypair) {
         throw new Error("Signing key not found");
       }
 
       tx.feePayer = keypair.publicKey;
-      tx.partialSign(keypair);
+      tx.partialSign(keypair); // TODO: tx.feePayer.toJSON fails, check why keypair.publicKey is Uint8Array(32) instead of PublicKey
       return tx;
     },
     [activeAccount],

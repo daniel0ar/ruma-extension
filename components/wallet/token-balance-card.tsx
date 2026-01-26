@@ -9,7 +9,6 @@ interface TokenBalanceCardProps {
 }
 
 export function TokenBalanceCard({ tokenBalance }: TokenBalanceCardProps) {
-  const { isPrivateMode } = useWallet();
   const { token, balance, usdValue } = tokenBalance;
 
   const displayBalance = formatBalance(balance);

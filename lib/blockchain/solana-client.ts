@@ -3,6 +3,8 @@
 
 import { SOL_TOKEN, USDC_TOKEN } from "./constants";
 import type { Transaction } from "./types";
+import { Transaction as SolanaTransaction } from "@solana/web3.js";
+import bs58 from "bs58";
 
 const FALLBACK_RPC_URLS = [
   "https://api.mainnet.solana.com", // Solana public mainnet rpc
@@ -197,4 +199,40 @@ export async function getTransactions(
 export function isValidSolanaAddress(address: string): boolean {
   const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
   return base58Regex.test(address);
+}
+
+export async function sendSignedTransaction(signedTx: SolanaTransaction) {
+  const serializedTx = signedTx.serialize();
+  const txBase58 = bs58.encode(serializedTx);
+
+  // Send via RPC
+  const result = await rpcCall<{ signature: string }>("sendTransaction", [
+    txBase58,
+  ]);
+  return result.signature;
+}
+
+export async function fetchRecentBlockhash() {
+  const primaryUrl = getRpcUrl();
+  const response = await fetch(`${primaryUrl}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "getLatestBlockhash",
+      params: [],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  if (data.error) {
+    throw new Error(data.error.message || "RPC error");
+  }
+
+  return data.result.value.blockhash;
 }

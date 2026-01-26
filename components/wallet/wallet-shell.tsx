@@ -10,6 +10,7 @@ import { AccountSelectorOverlay } from "./overlays/account-selector-overlay"
 import { SettingsOverlay } from "./overlays/settings-overlay"
 import { TransferModal } from "./modals/transfer-modal"
 import { DepositModal } from "./modals/deposit-modal"
+import { PrivateDepositModal } from "./modals/private-deposit-modal"
 import { WithdrawModal } from "./modals/withdraw-modal"
 import { useWallet } from "@/contexts/wallet-context"
 import { cn } from "@/lib/utils"
@@ -55,7 +56,8 @@ export function WalletShell() {
 
       {/* Keep transfer/deposit/withdraw as dialogs since they have forms */}
       <TransferModal open={showTransfer} onOpenChange={setShowTransfer} />
-      <DepositModal open={showDeposit} onOpenChange={setShowDeposit} />
+      <DepositModal open={!isPrivateMode && showDeposit} onOpenChange={setShowDeposit} />
+      <PrivateDepositModal open={isPrivateMode && showDeposit} onOpenChange={setShowDeposit} />
       <WithdrawModal open={showWithdraw} onOpenChange={setShowWithdraw} />
     </div>
   )

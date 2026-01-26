@@ -1,19 +1,19 @@
-"use client"
+"use client";
 
-import type { TokenBalance } from "@/lib/blockchain/types"
-import { formatBalance, formatUsdValue } from "@/lib/blockchain/utils"
-import { useWallet } from "@/contexts/wallet-context"
+import type { TokenBalance } from "@/lib/blockchain/types";
+import { formatBalance, formatUsdValue } from "@/lib/blockchain/utils";
+import { useWallet } from "@/contexts/wallet-context";
 
 interface TokenBalanceCardProps {
-  tokenBalance: TokenBalance
+  tokenBalance: TokenBalance;
 }
 
 export function TokenBalanceCard({ tokenBalance }: TokenBalanceCardProps) {
-  const { isPrivateMode } = useWallet()
-  const { token, balance, usdValue } = tokenBalance
+  const { isPrivateMode } = useWallet();
+  const { token, balance, usdValue } = tokenBalance;
 
-  const displayBalance = isPrivateMode ? "0" : formatBalance(balance)
-  const displayUsdValue = isPrivateMode ? formatUsdValue(0) : formatUsdValue(usdValue)
+  const displayBalance = formatBalance(balance);
+  const displayUsdValue = formatUsdValue(usdValue);
 
   return (
     <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors">
@@ -58,10 +58,12 @@ export function TokenBalanceCard({ tokenBalance }: TokenBalanceCardProps) {
         </div>
         <div className="flex flex-col">
           <span className="font-medium">{token.symbol}</span>
-          <span className="text-sm text-muted-foreground">{displayBalance}</span>
+          <span className="text-sm text-muted-foreground">
+            {displayBalance}
+          </span>
         </div>
       </div>
       <span className="font-medium">{displayUsdValue}</span>
     </div>
-  )
+  );
 }

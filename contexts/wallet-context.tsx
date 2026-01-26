@@ -241,15 +241,24 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      // Fetch real balances from Solana mainnet
-      let sol: number | undefined;
-      let usdc: number | undefined;
+      let sol: number = 0;
+      let usdc: number = 0;
 
+      // First fetch ShadowWire balances if in private mode
       if (state.isPrivateMode) {
-        ({ sol, usdc } = await fetchShadowWireBalances(activeAccount.address));
+        const shadowWireBalances = await fetchShadowWireBalances(
+          activeAccount.address,
+        );
+        sol = shadowWireBalances.sol;
+        usdc = shadowWireBalances.usdc;
       }
 
-      ({ sol, usdc } = await getAllBalances(activeAccount.address));
+      // Only fetch mainnet balances if not in private mode
+      if (!state.isPrivateMode) {
+        const mainnetBalances = await getAllBalances(activeAccount.address);
+        sol = mainnetBalances.sol || sol; // Fallback to ShadowWire if mainnet fails
+        usdc = mainnetBalances.usdc || usdc; // Fallback to ShadowWire if mainnet fails
+      }
 
       // Fetch prices from CoinGecko
       let solPrice = 0;

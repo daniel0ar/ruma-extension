@@ -100,7 +100,8 @@ export function PrivateDepositModal({
               Verify
             </Button>
             <p className="text-xs text-muted-foreground text-center">
-              The pool you deposited to is private on the transaction history
+              You have transfered your funds into a private pool. For best
+              privacy, withdraw a different amount to a brand new wallet.
             </p>
           </div>
         ) : (

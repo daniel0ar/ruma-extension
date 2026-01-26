@@ -211,3 +211,28 @@ export async function sendSignedTransaction(signedTx: SolanaTransaction) {
   ]);
   return result.signature;
 }
+
+export async function fetchRecentBlockhash() {
+  const primaryUrl = getRpcUrl();
+  const response = await fetch(`${primaryUrl}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "getLatestBlockhash",
+      params: [],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  if (data.error) {
+    throw new Error(data.error.message || "RPC error");
+  }
+
+  return data.result.value.blockhash;
+}

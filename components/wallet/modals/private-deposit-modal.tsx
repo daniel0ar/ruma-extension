@@ -10,7 +10,10 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Transaction } from "@solana/web3.js";
-import { sendSignedTransaction } from "@/lib/blockchain/solana-client";
+import {
+  fetchRecentBlockhash,
+  sendSignedTransaction,
+} from "@/lib/blockchain/solana-client";
 import { X, Check } from "lucide-react";
 
 interface PrivateDepositModalProps {

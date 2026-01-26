@@ -24,6 +24,7 @@ import { getRandomColor, generateAccountId } from "@/lib/blockchain/utils";
 import {
   getAllBalances,
   getTransactions as fetchSolanaTransactions,
+  fetchRecentBlockhash,
 } from "@/lib/blockchain/solana-client";
 import * as bip39 from "bip39";
 import { Keypair, Transaction as SolanaTransaction } from "@solana/web3.js";
@@ -406,6 +407,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       }
       const correctTypeKeypair = Keypair.fromSecretKey(keypair.secretKey); //Temp fix for: tx.feePayer.toJSON fails (keypair.publicKey is Uint8Array(32) instead of PublicKey)
       tx.feePayer = correctTypeKeypair.publicKey;
+      const latestBlockhash = await fetchRecentBlockhash(); // Temp fix for: Blockhash not found fails.
+      tx.recentBlockhash = latestBlockhash; // Temp fix for: Blockhash not found fails.
+
       tx.partialSign(correctTypeKeypair);
       return tx;
     },

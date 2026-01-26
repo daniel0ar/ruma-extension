@@ -4,6 +4,7 @@
 import { SOL_TOKEN, USDC_TOKEN } from "./constants";
 import type { Transaction } from "./types";
 import { Transaction as SolanaTransaction } from "@solana/web3.js";
+import bs58 from "bs58";
 
 const FALLBACK_RPC_URLS = [
   "https://api.mainnet.solana.com", // Solana public mainnet rpc
@@ -202,11 +203,11 @@ export function isValidSolanaAddress(address: string): boolean {
 
 export async function sendSignedTransaction(signedTx: SolanaTransaction) {
   const serializedTx = signedTx.serialize();
-  const txBase64 = serializedTx.toString("base64");
+  const txBase58 = bs58.encode(serializedTx);
 
   // Send via RPC
   const result = await rpcCall<{ signature: string }>("sendTransaction", [
-    txBase64,
+    txBase58,
   ]);
   return result.signature;
 }

@@ -404,9 +404,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       if (!keypair) {
         throw new Error("Signing key not found");
       }
-
-      tx.feePayer = keypair.publicKey;
-      tx.partialSign(keypair); // TODO: tx.feePayer.toJSON fails, check why keypair.publicKey is Uint8Array(32) instead of PublicKey
+      const correctTypeKeypair = Keypair.fromSecretKey(keypair.secretKey); //Temp fix for: tx.feePayer.toJSON fails (keypair.publicKey is Uint8Array(32) instead of PublicKey)
+      tx.feePayer = correctTypeKeypair.publicKey;
+      tx.partialSign(correctTypeKeypair);
       return tx;
     },
     [activeAccount],

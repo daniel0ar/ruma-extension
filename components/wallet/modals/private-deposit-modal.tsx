@@ -34,7 +34,7 @@ export function PrivateDepositModal({
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
   >("idle");
-  const [signature, setSignature] = useState<string | null>(null);
+  const [txHash, setTxHash] = useState<string | null>(null);
 
   const handleDeposit = async () => {
     if (!activeAccount || !shadowWireClient || !isPrivateMode) return;
@@ -55,7 +55,7 @@ export function PrivateDepositModal({
       // Sign with the active account's keypair
       const signedTx = await signTransaction(unsignedTx);
       const txSignature = await sendSignedTransaction(signedTx);
-      setSignature(txSignature);
+      setTxHash(txSignature);
 
       setStatus("success");
       setAmount("");
@@ -67,8 +67,8 @@ export function PrivateDepositModal({
   };
 
   const handleVerify = () => {
-    if (signature) {
-      window.open(`https://solscan.io/tx/${signature}`, "_blank");
+    if (txHash) {
+      window.open(`https://solscan.io/tx/${txHash}`, "_blank");
       if (onSuccess) onSuccess();
     }
   };
@@ -79,7 +79,11 @@ export function PrivateDepositModal({
         {status === "error" ? (
           <div className="flex flex-col items-center gap-4">
             <X className="h-12 w-12 text-destructive" />
-            <h3 className="text-lg font-semibold">Failed deposit</h3>
+            <DialogHeader>
+              <DialogTitle className="text-lg font-semibold">
+                Failed deposit
+              </DialogTitle>
+            </DialogHeader>
             <p className="text-sm text-destructive">{error}</p>
             <Button
               onClick={() => {
@@ -95,7 +99,11 @@ export function PrivateDepositModal({
         ) : status === "success" ? (
           <div className="flex flex-col items-center gap-4">
             <Check className="h-12 w-12 text-green-500" />
-            <h3 className="text-lg font-semibold">Deposit successful</h3>
+            <DialogHeader>
+              <DialogTitle className="text-lg font-semibold">
+                Deposit sucessful
+              </DialogTitle>
+            </DialogHeader>
             <Button onClick={handleVerify} className="mt-4">
               Verify
             </Button>

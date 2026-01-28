@@ -2,8 +2,11 @@
   "manifest_version": 3,
   "name": "Ruma Wallet",
   "version": "1.0.0",
-  "description": "Your secure gateway to the Solana blockchain",
+  "description": "Privacy for your Solana assets",
   "permissions": ["storage", "activeTab"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
   "background": {
     "service_worker": "service-worker.js"
   },

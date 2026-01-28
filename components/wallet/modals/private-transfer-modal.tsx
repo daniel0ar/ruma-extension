@@ -60,7 +60,7 @@ export function PrivateTransferModal({
       const transferTx = await shadowWireClient.transferWithClientProofs({
         sender: activeAccount.address,
         recipient: recipient,
-        amount: parseFloat(amount) * 1e9,
+        amount: parseFloat(amount),
         token: "SOL",
         type: "internal",
         customProof: proof,
@@ -75,6 +75,11 @@ export function PrivateTransferModal({
       // const signedTx = await signTransaction(unsignedTx);
       // const txSignature = await sendSignedTransaction(signedTx);
       // setTxHash(txSignature);
+      if (!transferTx.success) {
+        setError("Error in transaction forming");
+        setStatus("error");
+        return;
+      }
 
       console.log("Transfer transaction:", transferTx.tx_signature);
       setTxHash(transferTx.tx_signature);
@@ -104,7 +109,7 @@ export function PrivateTransferModal({
         {status === "error" ? (
           <div className="flex flex-col items-center gap-4">
             <X className="h-12 w-12 text-destructive" />
-            <h3 className="text-lg font-semibold">Failed deposit</h3>
+            <h3 className="text-lg font-semibold">Failed transfer</h3>
             <p className="text-sm text-destructive">{error}</p>
             <Button
               onClick={() => {
@@ -120,7 +125,7 @@ export function PrivateTransferModal({
         ) : status === "success" ? (
           <div className="flex flex-col items-center gap-4">
             <Check className="h-12 w-12 text-green-500" />
-            <h3 className="text-lg font-semibold">Deposit successful</h3>
+            <h3 className="text-lg font-semibold">Transfer successful</h3>
             <Button onClick={handleVerify} className="mt-4">
               Verify
             </Button>
@@ -132,7 +137,7 @@ export function PrivateTransferModal({
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Send</DialogTitle>
+              <DialogTitle>Private Transfer</DialogTitle>
             </DialogHeader>
 
             <div className="flex flex-col gap-4">

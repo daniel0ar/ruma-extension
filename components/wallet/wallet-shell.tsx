@@ -61,11 +61,14 @@ export function WalletShell() {
         onClose={() => setShowSettings(false)}
       />
 
-      {/* Keep transfer/deposit/withdraw as dialogs since they have forms */}
-      <TransferModal open={showTransfer} onOpenChange={setShowTransfer} />
+      {/* Transfer/deposit/withdraw dialogs */}
+      <TransferModal
+        open={!isPrivateMode && showTransfer}
+        onOpenChange={setShowTransfer}
+      />
       <PrivateTransferModal
-        open={isPrivateMode && showDeposit}
-        onOpenChange={setShowDeposit}
+        open={isPrivateMode && showTransfer}
+        onOpenChange={setShowTransfer}
       />
       <DepositModal
         open={!isPrivateMode && showDeposit}

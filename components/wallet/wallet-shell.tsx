@@ -18,7 +18,8 @@ import { useThemeMode } from "@/hooks/use-theme-mode";
 import { PrivateTransferModal } from "./modals/private-transfer-modal";
 
 export function WalletShell() {
-  const { isPrivateMode, refreshBalances } = useWallet();
+  const { isPrivateMode, refreshBalances, isShadowWireInitialized } =
+    useWallet();
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [showAccountSelector, setShowAccountSelector] = useState(false);
   const [showTransfer, setShowTransfer] = useState(false);
@@ -38,6 +39,11 @@ export function WalletShell() {
       <WalletHeader onSettingsClick={() => setShowSettings(true)} />
 
       <main className="flex-1 overflow-y-auto scrollbar-hide pb-4">
+        {!isShadowWireInitialized && (
+          <div className="flex items-center text-center">
+            Privacy libraries loading...
+          </div>
+        )}
         {activeTab === "home" && (
           <HomeTab
             onAccountSelectorClick={() => setShowAccountSelector(true)}
@@ -65,10 +71,12 @@ export function WalletShell() {
       <TransferModal
         open={!isPrivateMode && showTransfer}
         onOpenChange={setShowTransfer}
+        onSuccess={refreshBalances}
       />
       <PrivateTransferModal
         open={isPrivateMode && showTransfer}
         onOpenChange={setShowTransfer}
+        onSuccess={refreshBalances}
       />
       <DepositModal
         open={!isPrivateMode && showDeposit}
@@ -79,7 +87,11 @@ export function WalletShell() {
         onOpenChange={setShowDeposit}
         onSuccess={refreshBalances}
       />
-      <WithdrawModal open={showWithdraw} onOpenChange={setShowWithdraw} />
+      <WithdrawModal
+        open={showWithdraw}
+        onOpenChange={setShowWithdraw}
+        onSuccess={refreshBalances}
+      />
     </div>
   );
 }

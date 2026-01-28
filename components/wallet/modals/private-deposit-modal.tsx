@@ -59,6 +59,7 @@ export function PrivateDepositModal({
 
       setStatus("success");
       setAmount("");
+      if (onSuccess) onSuccess();
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -69,7 +70,6 @@ export function PrivateDepositModal({
   const handleVerify = () => {
     if (txHash) {
       window.open(`https://solscan.io/tx/${txHash}`, "_blank");
-      if (onSuccess) onSuccess();
     }
   };
 

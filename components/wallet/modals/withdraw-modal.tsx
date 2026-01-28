@@ -144,9 +144,10 @@ export function WithdrawModal({
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Withdraw from Private Balance</DialogTitle>
+              <DialogTitle>Withdraw</DialogTitle>
               <DialogDescription>
-                Withdraw funds from your shielded balance to your public wallet.
+                Withdraw funds from your private pool back to your public
+                wallet.
               </DialogDescription>
             </DialogHeader>
 

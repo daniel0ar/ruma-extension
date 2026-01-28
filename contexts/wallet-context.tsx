@@ -217,10 +217,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
         if (state.isPrivateMode && isWASMSupported()) {
           await initWASM("wasm/settler_wasm_bg.wasm");
+          console.log("WASM INITIALIZED");
+          setShadowWireClient(client);
+          setIsShadowWireInitialized(true);
         }
-
-        setShadowWireClient(client);
-        setIsShadowWireInitialized(true);
       } catch (error) {
         console.error("Failed to initialize ShadowWire:", error);
       }

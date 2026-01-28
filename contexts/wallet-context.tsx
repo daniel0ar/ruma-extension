@@ -30,12 +30,7 @@ import * as bip39 from "bip39";
 import { Keypair, Transaction as SolanaTransaction } from "@solana/web3.js";
 import bs58 from "bs58";
 import nacl from "tweetnacl";
-import {
-  ShadowWireClient,
-  initWASM,
-  isWASMSupported,
-  WASMNotSupportedError,
-} from "@radr/shadowwire";
+import { ShadowWireClient } from "@radr/shadowwire";
 
 interface WalletContextType {
   // State
@@ -63,7 +58,9 @@ interface WalletContextType {
 
   //Shadowwire
   shadowWireClient: ShadowWireClient | null;
+  setShadowWireClient: (client: ShadowWireClient) => void;
   isShadowWireInitialized: boolean;
+  setIsShadowWireInitialized: (isShadowWireInitialized: boolean) => void;
 }
 
 const STORE_NAME = "ruma-keypairs";
@@ -201,34 +198,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  useEffect(() => {
-    if (isShadowWireInitialized) return;
-
-    async function initShadowWire() {
-      try {
-        // Initialize WASM if in private mode
-        if (state.isPrivateMode && !isWASMSupported()) {
-          throw new WASMNotSupportedError();
-        }
-
-        const client = new ShadowWireClient({
-          debug: true, // TODO: remove for production
-        });
-
-        if (state.isPrivateMode && isWASMSupported()) {
-          await initWASM("wasm/settler_wasm_bg.wasm");
-          console.log("WASM INITIALIZED");
-          setShadowWireClient(client);
-          setIsShadowWireInitialized(true);
-        }
-      } catch (error) {
-        console.error("Failed to initialize ShadowWire:", error);
-      }
-    }
-
-    initShadowWire();
-  }, [state.isPrivateMode, isShadowWireInitialized]);
-
   // Fetch real balances from mainnet and shadowwire (private mode)
   const refreshBalances = useCallback(async () => {
     if (!activeAccount) {
@@ -287,7 +256,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [activeAccount, state.isPrivateMode]);
+  }, [activeAccount, state.isPrivateMode, isShadowWireInitialized]);
 
   // Fetch real transactions from devnet
   const refreshTransactions = useCallback(async () => {
@@ -444,7 +413,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         refreshTransactions,
         completeOnboarding,
         shadowWireClient,
+        setShadowWireClient,
         isShadowWireInitialized,
+        setIsShadowWireInitialized,
         signTransaction,
       }}
     >

@@ -109,7 +109,9 @@ export function WithdrawModal({
             <DialogTitle className="text-lg font-semibold">
               Failed withdraw
             </DialogTitle>
-            <p className="text-sm text-destructive">{error}</p>
+            <p className="text-sm text-destructive text-wrap break-all">
+              {error}
+            </p>
             <Button
               onClick={() => {
                 setStatus("idle");

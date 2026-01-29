@@ -6,7 +6,7 @@ import type { Transaction } from "./types";
 import { Transaction as SolanaTransaction } from "@solana/web3.js";
 import bs58 from "bs58";
 
-const FALLBACK_RPC_URLS = [
+export const FALLBACK_RPC_URLS = [
   "https://api.mainnet.solana.com", // Solana public mainnet rpc
 ].filter(Boolean); // Remove empty strings
 

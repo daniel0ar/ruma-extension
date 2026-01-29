@@ -7,6 +7,8 @@ import {
   initWASM,
   isWASMSupported,
 } from "@radr/shadowwire";
+import { PrivacyCash } from "privacycash";
+import { FALLBACK_RPC_URLS } from "@/lib/blockchain/solana-client";
 
 export default function App() {
   const {
@@ -14,6 +16,11 @@ export default function App() {
     isShadowWireInitialized,
     setShadowWireClient,
     setIsShadowWireInitialized,
+    isPrivacyCashInitialized,
+    setPrivacyCashClient,
+    setIsPrivacyCashInitialized,
+    activeAccount,
+    getKeypairFromStorage,
   } = useWallet();
 
   useEffect(() => {
@@ -25,30 +32,49 @@ export default function App() {
     }
   }, [isOnboarded]);
 
-  // Init shadowwire client and wasm
+  // Init privacy clients and wasm
   useEffect(() => {
-    async function initShadowWire() {
+    async function initPrivacyClients() {
       try {
-        // Initialize WASM if in private mode
+        // Initialize WASM if supported
         if (!isWASMSupported()) {
           throw new WASMNotSupportedError();
         }
 
-        const client = new ShadowWireClient({
+        // Initialize ShadowWire
+        const shadowWireClient = new ShadowWireClient({
           debug: true, // TODO: remove for production
         });
 
         await initWASM("wasm/settler_wasm_bg.wasm");
-        setShadowWireClient(client);
+        setShadowWireClient(shadowWireClient);
         setIsShadowWireInitialized(true);
+
+        // Initialize PrivacyCash
+        if (!activeAccount) {
+          throw new Error("No active account");
+        }
+        const keypair = await getKeypairFromStorage(activeAccount.id);
+
+        if (!keypair) {
+          throw new Error("Keypair not found");
+        }
+
+        const privacyCashClient = new PrivacyCash({
+          RPC_url: FALLBACK_RPC_URLS[0], // TODO: Find a way to use process.env.SOLANA_RPC_URL
+          owner: keypair, // probably have to do Keypair.fromSecretKey(keypair.secretKey)
+          enableDebug: false, // TODO: Remove for production
+        });
+        setPrivacyCashClient(privacyCashClient);
+        setIsPrivacyCashInitialized(true);
       } catch (error) {
-        console.error("Failed to initialize ShadowWire:", error);
+        console.error("Failed to initialize privacy clients:", error);
       }
     }
-    if (!isShadowWireInitialized) {
-      initShadowWire();
+    if (!isShadowWireInitialized || !isPrivacyCashInitialized) {
+      initPrivacyClients();
     }
-  }, [isShadowWireInitialized]);
+  }, [isShadowWireInitialized, isPrivacyCashInitialized]);
 
   if (!isOnboarded) {
     return (

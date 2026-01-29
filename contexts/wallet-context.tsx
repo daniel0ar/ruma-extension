@@ -31,6 +31,7 @@ import { Keypair, Transaction as SolanaTransaction } from "@solana/web3.js";
 import bs58 from "bs58";
 import nacl from "tweetnacl";
 import { ShadowWireClient } from "@radr/shadowwire";
+import { PrivacyCash } from "privacycash";
 
 interface WalletContextType {
   // State
@@ -55,12 +56,17 @@ interface WalletContextType {
   refreshTransactions: () => Promise<void>;
   completeOnboarding: (account: Account) => void;
   signTransaction: (tx: SolanaTransaction) => Promise<SolanaTransaction>;
+  getKeypairFromStorage: (accountId: string) => Promise<Keypair | null>;
 
-  //Shadowwire
+  // Privacy clients
   shadowWireClient: ShadowWireClient | null;
   setShadowWireClient: (client: ShadowWireClient) => void;
   isShadowWireInitialized: boolean;
   setIsShadowWireInitialized: (isShadowWireInitialized: boolean) => void;
+  privacyCashClient: PrivacyCash | null;
+  setPrivacyCashClient: (client: PrivacyCash) => void;
+  isPrivacyCashInitialized: boolean;
+  setIsPrivacyCashInitialized: (isPrivacyCashInitialized: boolean) => void;
 }
 
 const STORE_NAME = "ruma-keypairs";
@@ -168,6 +174,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [shadowWireClient, setShadowWireClient] =
     useState<ShadowWireClient | null>(null);
   const [isShadowWireInitialized, setIsShadowWireInitialized] = useState(false);
+  const [privacyCashClient, setPrivacyCashClient] =
+    useState<PrivacyCash | null>(null);
+  const [isPrivacyCashInitialized, setIsPrivacyCashInitialized] =
+    useState(false);
 
   const activeAccount =
     state.accounts.find((a) => a.id === state.activeAccountId) || null;
@@ -183,22 +193,38 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     initBrowserDB();
   }, []);
 
-  const fetchShadowWireBalances = async (address: string) => {
-    if (!shadowWireClient) {
-      console.error("Shadowwire client not initialized");
-      return { sol: 0, usdc: 0 };
+  const fetchPrivacyBalances = async (address: string) => {
+    const results = {
+      shadowwire: { sol: 0, usdc: 0 },
+      privacycash: { sol: 0, usdc: 0 },
+    };
+
+    // Fetch ShadowWire balances
+    if (shadowWireClient) {
+      try {
+        const balance = await shadowWireClient.getBalance(address, "SOL");
+        results.shadowwire.sol = balance.available / 1e9;
+        // TODO: Fetch USDC balance
+      } catch (error) {
+        console.error("Failed to fetch ShadowWire balances:", error);
+      }
     }
-    try {
-      const balance = await shadowWireClient.getBalance(address, "SOL");
-      const [sol, usdc] = [balance.available / 1e9, 0]; // TODO: Fetch USDC or USD1 balance and use Promise.all
-      return { sol, usdc };
-    } catch (error) {
-      console.error("Failed to fetch ShadowWire balances:", error);
-      return { sol: 0, usdc: 0 };
+
+    // Fetch PrivacyCash balances
+    if (privacyCashClient) {
+      try {
+        const balance = await privacyCashClient.getPrivateBalance();
+        results.privacycash.sol = balance.lamports / 1e9;
+        // TODO: Fetch USDC balance
+      } catch (error) {
+        console.error("Failed to fetch PrivacyCash balances:", error);
+      }
     }
+
+    return results;
   };
 
-  // Fetch real balances from mainnet and shadowwire (private mode)
+  // Fetch real balances from mainnet and privacy protocols
   const refreshBalances = useCallback(async () => {
     if (!activeAccount) {
       setBalances([
@@ -210,24 +236,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      let sol: number = 0;
-      let usdc: number = 0;
-
-      // First fetch ShadowWire balances if in private mode
-      if (state.isPrivateMode) {
-        const shadowWireBalances = await fetchShadowWireBalances(
-          activeAccount.address,
-        );
-        sol = shadowWireBalances.sol;
-        usdc = shadowWireBalances.usdc;
-      }
-
-      // Only fetch mainnet balances if not in private mode
-      if (!state.isPrivateMode) {
-        const mainnetBalances = await getAllBalances(activeAccount.address);
-        sol = mainnetBalances.sol || sol; // Fallback to ShadowWire if mainnet fails
-        usdc = mainnetBalances.usdc || usdc; // Fallback to ShadowWire if mainnet fails
-      }
+      const newBalances: TokenBalance[] = [];
 
       // Fetch prices from CoinGecko
       let solPrice = 0;
@@ -243,10 +252,83 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         // Price fetch failed, use defaults
       }
 
-      setBalances([
-        { token: SOL_TOKEN, balance: sol, usdValue: sol * solPrice },
-        { token: USDC_TOKEN, balance: usdc, usdValue: usdc * usdcPrice },
-      ]);
+      if (state.isPrivateMode) {
+        // Fetch privacy protocol balances
+        const privacyBalances = await fetchPrivacyBalances(
+          activeAccount.address,
+        );
+
+        // Add ShadowWire balances
+        if (privacyBalances.shadowwire.sol > 0) {
+          newBalances.push({
+            token: SOL_TOKEN,
+            balance: privacyBalances.shadowwire.sol,
+            usdValue: privacyBalances.shadowwire.sol * solPrice,
+            protocol: "shadowwire",
+          });
+        }
+        if (privacyBalances.shadowwire.usdc > 0) {
+          newBalances.push({
+            token: USDC_TOKEN,
+            balance: privacyBalances.shadowwire.usdc,
+            usdValue: privacyBalances.shadowwire.usdc * usdcPrice,
+            protocol: "shadowwire",
+          });
+        }
+
+        // Add PrivacyCash balances
+        if (privacyBalances.privacycash.sol > 0) {
+          newBalances.push({
+            token: SOL_TOKEN,
+            balance: privacyBalances.privacycash.sol,
+            usdValue: privacyBalances.privacycash.sol * solPrice,
+            protocol: "privacycash",
+          });
+        }
+        if (privacyBalances.privacycash.usdc > 0) {
+          newBalances.push({
+            token: USDC_TOKEN,
+            balance: privacyBalances.privacycash.usdc,
+            usdValue: privacyBalances.privacycash.usdc * usdcPrice,
+            protocol: "privacycash",
+          });
+        }
+
+        // If no private balances, show zero balances
+        if (newBalances.length === 0) {
+          newBalances.push(
+            {
+              token: SOL_TOKEN,
+              balance: 0,
+              usdValue: 0,
+              protocol: "shadowwire",
+            },
+            {
+              token: USDC_TOKEN,
+              balance: 0,
+              usdValue: 0,
+              protocol: "shadowwire",
+            },
+          );
+        }
+      } else {
+        // Fetch mainnet balances
+        const mainnetBalances = await getAllBalances(activeAccount.address);
+        newBalances.push(
+          {
+            token: SOL_TOKEN,
+            balance: mainnetBalances.sol || 0,
+            usdValue: (mainnetBalances.sol || 0) * solPrice,
+          },
+          {
+            token: USDC_TOKEN,
+            balance: mainnetBalances.usdc || 0,
+            usdValue: (mainnetBalances.usdc || 0) * usdcPrice,
+          },
+        );
+      }
+
+      setBalances(newBalances);
     } catch (error) {
       console.error("Failed to fetch balances:", error);
       setBalances([
@@ -256,7 +338,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [activeAccount, state.isPrivateMode, isShadowWireInitialized]);
+  }, [
+    activeAccount,
+    state.isPrivateMode,
+    isShadowWireInitialized,
+    isPrivacyCashInitialized,
+  ]);
 
   // Fetch real transactions from devnet
   const refreshTransactions = useCallback(async () => {
@@ -416,7 +503,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setShadowWireClient,
         isShadowWireInitialized,
         setIsShadowWireInitialized,
+        privacyCashClient,
+        setPrivacyCashClient,
+        isPrivacyCashInitialized,
+        setIsPrivacyCashInitialized,
         signTransaction,
+        getKeypairFromStorage,
       }}
     >
       {children}

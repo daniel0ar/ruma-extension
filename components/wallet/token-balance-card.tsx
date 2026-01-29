@@ -2,14 +2,14 @@
 
 import type { TokenBalance } from "@/lib/blockchain/types";
 import { formatBalance, formatUsdValue } from "@/lib/blockchain/utils";
-import { useWallet } from "@/contexts/wallet-context";
+import { Badge } from "@/components/ui/badge";
 
 interface TokenBalanceCardProps {
   tokenBalance: TokenBalance;
 }
 
 export function TokenBalanceCard({ tokenBalance }: TokenBalanceCardProps) {
-  const { token, balance, usdValue } = tokenBalance;
+  const { token, balance, usdValue, protocol } = tokenBalance;
 
   const displayBalance = formatBalance(balance);
   const displayUsdValue = formatUsdValue(usdValue);
@@ -56,7 +56,14 @@ export function TokenBalanceCard({ tokenBalance }: TokenBalanceCardProps) {
           )}
         </div>
         <div className="flex flex-col">
-          <span className="font-medium">{token.symbol}</span>
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{token.symbol}</span>
+            {protocol && (
+              <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+                {protocol === "shadowwire" ? "SW" : "PC"}
+              </Badge>
+            )}
+          </div>
           <span className="text-sm text-muted-foreground">
             {displayBalance}
           </span>

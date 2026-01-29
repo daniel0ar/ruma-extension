@@ -1,6 +1,9 @@
 import { PublicKey } from "@solana/web3.js";
 
-export async function getSignedSignature(signed: Signed): Promise<Signed> {
+export async function getSignedSignature(
+  signed: Signed,
+  signMessage: (message: Uint8Array) => Promise<Uint8Array>,
+): Promise<Signed> {
   const encodedMessage = new TextEncoder().encode(
     `Privacy Money account sign in`,
   );
@@ -8,7 +11,7 @@ export async function getSignedSignature(signed: Signed): Promise<Signed> {
   // ask for sign
   let signature: Uint8Array;
   try {
-    signature = await signed.provider.signMessage(encodedMessage);
+    signature = await signMessage(encodedMessage);
   } catch (err: any) {
     if (
       err instanceof Error &&

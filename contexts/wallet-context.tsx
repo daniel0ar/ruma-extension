@@ -57,6 +57,7 @@ interface WalletContextType {
   refreshTransactions: () => Promise<void>;
   completeOnboarding: (account: Account) => void;
   signTransaction: (tx: SolanaTransaction) => Promise<SolanaTransaction>;
+  signMessage: (message: Uint8Array) => Promise<Uint8Array>;
 
   // Privacy clients
   shadowWireClient: ShadowWireClient | null;
@@ -478,6 +479,30 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     [activeAccount],
   );
 
+  const signMessage = useCallback(
+    async (message: Uint8Array): Promise<Uint8Array> => {
+      if (!activeAccount) {
+        throw new Error("No active account");
+      }
+      const keypair = await getKeypairFromStorage(activeAccount.id);
+      if (!keypair) {
+        throw new Error("Signing key not found");
+      }
+
+      // Use the correct keypair type
+      const correctTypeKeypair = Keypair.fromSecretKey(keypair.secretKey);
+
+      // Sign the message using the keypair
+      const signature = nacl.sign.detached(
+        message,
+        correctTypeKeypair.secretKey,
+      );
+
+      return new Uint8Array(signature);
+    },
+    [activeAccount],
+  );
+
   return (
     <WalletContext.Provider
       value={{
@@ -503,6 +528,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         isPrivacyCashInitialized,
         setIsPrivacyCashInitialized,
         signTransaction,
+        signMessage,
       }}
     >
       {children}

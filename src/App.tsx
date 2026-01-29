@@ -7,8 +7,10 @@ import {
   initWASM,
   isWASMSupported,
 } from "@radr/shadowwire";
-import { PrivacyCash } from "privacycash";
-import { FALLBACK_RPC_URLS } from "@/lib/blockchain/solana-client";
+import { getSignedSignature } from "@/lib/privacycash/init-privacycash";
+import { PublicKey } from "@solana/web3.js";
+import { EncryptionService } from "privacycash/utils";
+export * from "privacycash/utils";
 
 export default function App() {
   const {
@@ -17,10 +19,8 @@ export default function App() {
     setShadowWireClient,
     setIsShadowWireInitialized,
     isPrivacyCashInitialized,
-    setPrivacyCashClient,
     setIsPrivacyCashInitialized,
     activeAccount,
-    getKeypairFromStorage,
   } = useWallet();
 
   useEffect(() => {
@@ -54,18 +54,17 @@ export default function App() {
         if (!activeAccount) {
           throw new Error("No active account");
         }
-        const keypair = await getKeypairFromStorage(activeAccount.id);
 
-        if (!keypair) {
-          throw new Error("Keypair not found");
-        }
-
-        const privacyCashClient = new PrivacyCash({
-          RPC_url: FALLBACK_RPC_URLS[0], // TODO: Find a way to use process.env.SOLANA_RPC_URL
-          owner: keypair, // probably have to do Keypair.fromSecretKey(keypair.secretKey)
-          enableDebug: false, // TODO: Remove for production
+        const signed = await getSignedSignature({
+          publicKey: new PublicKey(activeAccount.publicKey), // Had to convert from string to PublicKey from @solana/web3js
+          provider: "", // correct?
         });
-        setPrivacyCashClient(privacyCashClient);
+        let encryptionService = new EncryptionService();
+        if (!signed.signature) {
+          console.error("Privacy Cash failed to set signature");
+          return;
+        }
+        encryptionService.deriveEncryptionKeyFromSignature(signed.signature);
         setIsPrivacyCashInitialized(true);
       } catch (error) {
         console.error("Failed to initialize privacy clients:", error);

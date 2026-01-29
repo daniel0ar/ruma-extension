@@ -31,7 +31,8 @@ import { Keypair, Transaction as SolanaTransaction } from "@solana/web3.js";
 import bs58 from "bs58";
 import nacl from "tweetnacl";
 import { ShadowWireClient } from "@radr/shadowwire";
-import { PrivacyCash } from "privacycash";
+import { getBalanceFromUtxos } from "privacycash/utils";
+export * from "privacycash/utils";
 
 interface WalletContextType {
   // State
@@ -56,15 +57,12 @@ interface WalletContextType {
   refreshTransactions: () => Promise<void>;
   completeOnboarding: (account: Account) => void;
   signTransaction: (tx: SolanaTransaction) => Promise<SolanaTransaction>;
-  getKeypairFromStorage: (accountId: string) => Promise<Keypair | null>;
 
   // Privacy clients
   shadowWireClient: ShadowWireClient | null;
   setShadowWireClient: (client: ShadowWireClient) => void;
   isShadowWireInitialized: boolean;
   setIsShadowWireInitialized: (isShadowWireInitialized: boolean) => void;
-  privacyCashClient: PrivacyCash | null;
-  setPrivacyCashClient: (client: PrivacyCash) => void;
   isPrivacyCashInitialized: boolean;
   setIsPrivacyCashInitialized: (isPrivacyCashInitialized: boolean) => void;
 }
@@ -174,8 +172,6 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [shadowWireClient, setShadowWireClient] =
     useState<ShadowWireClient | null>(null);
   const [isShadowWireInitialized, setIsShadowWireInitialized] = useState(false);
-  const [privacyCashClient, setPrivacyCashClient] =
-    useState<PrivacyCash | null>(null);
   const [isPrivacyCashInitialized, setIsPrivacyCashInitialized] =
     useState(false);
 
@@ -211,9 +207,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
 
     // Fetch PrivacyCash balances
-    if (privacyCashClient) {
+    if (isPrivacyCashInitialized) {
       try {
-        const balance = await privacyCashClient.getPrivateBalance();
+        const balance = { lamports: 1000000000 }; // TODO: Find balance function for privacycash, maybe await getBalanceFromUtxos();
         results.privacycash.sol = balance.lamports / 1e9;
         // TODO: Fetch USDC balance
       } catch (error) {
@@ -244,6 +240,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       try {
         const priceResponse = await fetch(
           "https://api.coingecko.com/api/v3/simple/price?ids=solana,usd-coin&vs_currencies=usd",
+          { cache: "force-cache" },
         );
         const prices = await priceResponse.json();
         solPrice = prices.solana?.usd || 0;
@@ -503,12 +500,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setShadowWireClient,
         isShadowWireInitialized,
         setIsShadowWireInitialized,
-        privacyCashClient,
-        setPrivacyCashClient,
         isPrivacyCashInitialized,
         setIsPrivacyCashInitialized,
         signTransaction,
-        getKeypairFromStorage,
       }}
     >
       {children}

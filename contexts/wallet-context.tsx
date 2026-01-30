@@ -27,11 +27,15 @@ import {
   fetchRecentBlockhash,
 } from "@/lib/blockchain/solana-client";
 import * as bip39 from "bip39";
-import { Keypair, Transaction as SolanaTransaction } from "@solana/web3.js";
+import {
+  Keypair,
+  Transaction as SolanaTransaction,
+  VersionedTransaction,
+} from "@solana/web3.js";
 import bs58 from "bs58";
 import nacl from "tweetnacl";
 import { ShadowWireClient } from "@radr/shadowwire";
-import { getBalanceFromUtxos } from "privacycash/utils";
+import { EncryptionService, getBalanceFromUtxos } from "privacycash/utils";
 export * from "privacycash/utils";
 
 interface WalletContextType {
@@ -57,6 +61,9 @@ interface WalletContextType {
   refreshTransactions: () => Promise<void>;
   completeOnboarding: (account: Account) => void;
   signTransaction: (tx: SolanaTransaction) => Promise<SolanaTransaction>;
+  signVersionedTransaction: (
+    tx: VersionedTransaction,
+  ) => Promise<VersionedTransaction>;
   signMessage: (message: Uint8Array) => Promise<Uint8Array>;
 
   // Privacy clients
@@ -66,6 +73,9 @@ interface WalletContextType {
   setIsShadowWireInitialized: (isShadowWireInitialized: boolean) => void;
   isPrivacyCashInitialized: boolean;
   setIsPrivacyCashInitialized: (isPrivacyCashInitialized: boolean) => void;
+  encryptionService: EncryptionService | null;
+  setEncryptionService: (encryptionService: EncryptionService) => void;
+  connection;
 }
 
 const STORE_NAME = "ruma-keypairs";
@@ -175,6 +185,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [isShadowWireInitialized, setIsShadowWireInitialized] = useState(false);
   const [isPrivacyCashInitialized, setIsPrivacyCashInitialized] =
     useState(false);
+  const [encryptionService, setEncryptionService] =
+    useState<EncryptionService | null>(null);
 
   const activeAccount =
     state.accounts.find((a) => a.id === state.activeAccountId) || null;
@@ -479,6 +491,23 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     [activeAccount],
   );
 
+  const signVersionedTransaction = useCallback(
+    async (tx: VersionedTransaction): Promise<VersionedTransaction> => {
+      if (!activeAccount) {
+        throw new Error("No active account");
+      }
+      const keypair = await getKeypairFromStorage(activeAccount.id);
+      if (!keypair) {
+        throw new Error("Signing key not found");
+      }
+      const correctTypeKeypair = Keypair.fromSecretKey(keypair.secretKey);
+
+      tx.sign([correctTypeKeypair]);
+      return tx;
+    },
+    [activeAccount],
+  );
+
   const signMessage = useCallback(
     async (message: Uint8Array): Promise<Uint8Array> => {
       if (!activeAccount) {
@@ -528,7 +557,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         isPrivacyCashInitialized,
         setIsPrivacyCashInitialized,
         signTransaction,
+        signVersionedTransaction,
         signMessage,
+        encryptionService,
+        setEncryptionService,
+        connection,
       }}
     >
       {children}

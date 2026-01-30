@@ -21,6 +21,8 @@ export default function App() {
     isPrivacyCashInitialized,
     setIsPrivacyCashInitialized,
     activeAccount,
+    signMessage,
+    setEncryptionService,
   } = useWallet();
 
   useEffect(() => {
@@ -55,16 +57,20 @@ export default function App() {
           throw new Error("No active account");
         }
 
-        const signed = await getSignedSignature({
-          publicKey: new PublicKey(activeAccount.publicKey), // Had to convert from string to PublicKey from @solana/web3js
-          provider: "", // correct?
-        });
+        const signed = await getSignedSignature(
+          {
+            publicKey: new PublicKey(activeAccount.publicKey),
+            provider: "",
+          },
+          signMessage,
+        );
         let encryptionService = new EncryptionService();
         if (!signed.signature) {
           console.error("Privacy Cash failed to set signature");
           return;
         }
         encryptionService.deriveEncryptionKeyFromSignature(signed.signature);
+        setEncryptionService(encryptionService);
         setIsPrivacyCashInitialized(true);
       } catch (error) {
         console.error("Failed to initialize privacy clients:", error);

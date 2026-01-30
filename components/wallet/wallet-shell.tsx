@@ -33,7 +33,7 @@ export function WalletShell() {
     <div
       className={cn(
         "wallet-extension flex flex-col bg-background text-foreground relative",
-        "border border-border rounded-2xl shadow-2xl overflow-hidden",
+        "border border-border shadow-2xl overflow-hidden",
       )}
     >
       <WalletHeader onSettingsClick={() => setShowSettings(true)} />

@@ -32,7 +32,7 @@ export function DepositModal({ open, onOpenChange }: DepositModalProps) {
     if (open) {
       refreshBalances;
     }
-    onOpenChange(open);
+    onOpenChange(!open);
   };
 
   if (!activeAccount) return null;

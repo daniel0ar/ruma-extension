@@ -15,7 +15,7 @@ export function TokenBalanceCard({ tokenBalance }: TokenBalanceCardProps) {
   const displayUsdValue = formatUsdValue(usdValue);
 
   return (
-    <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors">
+    <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors skeuomorphic-card">
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 rounded-full bg-background flex items-center justify-center overflow-hidden">
           {token.symbol === "SOL" ? (

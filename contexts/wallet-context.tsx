@@ -235,6 +235,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       try {
         const priceResponse = await fetch(
           "https://api.coingecko.com/api/v3/simple/price?ids=solana,usd-coin&vs_currencies=usd",
+          { cache: "force-cache" },
         );
         const prices = await priceResponse.json();
         solPrice = prices.solana?.usd || 0;

@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
+    "@lightprotocol/hasher.rs": "^0.2.1",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",
     "@radix-ui/react-aspect-ratio": "1.1.1",
@@ -52,6 +53,7 @@
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
     "next-themes": "^0.4.6",
+    "privacycash": "^1.1.11",
     "react": "19.2.0",
     "react-day-picker": "9.8.0",
     "react-dom": "19.2.0",

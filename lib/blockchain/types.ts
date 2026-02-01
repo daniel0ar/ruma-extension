@@ -11,10 +11,13 @@ export interface Token {
   logoUrl: string
 }
 
+export type PrivacyProtocol = "shadowwire" | "privacycash"
+
 export interface TokenBalance {
   token: Token
   balance: number
   usdValue: number
+  protocol?: PrivacyProtocol // Optional for public balances
 }
 
 export interface Account {

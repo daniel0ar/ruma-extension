@@ -7,7 +7,7 @@ config();
 export default defineConfig({
   mode: process.env.NODE_ENV === "production" ? "production" : "development",
   entry: {
-    popup: "./src/popup.tsx",
+    popup: ["./src/popup.tsx", "./node_modules/buffer/index.js"],
     "service-worker": "./src/service-worker.ts",
     "content-script": "./src/content-script.ts",
     "onboarding-entry": "./src/onboarding-entry.tsx",
@@ -57,6 +57,11 @@ export default defineConfig({
     new (require("@rspack/core").DefinePlugin)({
       "process.env.SOLANA_RPC_URL": JSON.stringify(process.env.SOLANA_RPC_URL),
     }),
+    new (require("@rspack/core").DefinePlugin)({
+      global: {
+        Buffer: require.resolve("buffer"),
+      },
+    }),
     new (require("@rspack/core").HtmlRspackPlugin)({
       template: "./src/popup.html",
       filename: "popup.html",
@@ -68,9 +73,30 @@ export default defineConfig({
         { from: "public/manifest.json", to: "manifest.json" },
         { from: "public/*.png", to: "[name][ext]" },
         { from: "public/*.svg", to: "[name][ext]" },
+        // ShadowWire wasm
         {
           from: "public/wasm/settler_wasm_bg.wasm",
           to: "wasm/settler_wasm_bg.wasm",
+        },
+        // PrivacyCash wasm
+        {
+          from: "public/circuit2/transaction2.wasm",
+          to: "circuit2/transaction2.wasm",
+        },
+        // PrivacyCash zkey
+        {
+          from: "public/circuit2/transaction2.zkey",
+          to: "circuit2/transaction2.zkey",
+        },
+        // PrivacyCash lightprotocol dependency simd wasm
+        {
+          from: "node_modules/@lightprotocol/hasher.rs/dist/hasher_wasm_simd_bg.wasm",
+          to: "wasm/hasher_wasm_simd_bg.wasm",
+        },
+        // PrivacyCash lightprotocol dependency hasher wasm
+        {
+          from: "node_modules/@lightprotocol/hasher.rs/dist/light_wasm_hasher_bg.wasm",
+          to: "wasm/light_wasm_hasher_bg.wasm",
         },
       ],
     }),

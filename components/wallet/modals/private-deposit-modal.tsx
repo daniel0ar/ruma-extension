@@ -9,12 +9,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Transaction } from "@solana/web3.js";
 import {
-  fetchRecentBlockhash,
-  sendSignedTransaction,
-} from "@/lib/blockchain/solana-client";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { PublicKey, Transaction } from "@solana/web3.js";
+import { sendSignedTransaction } from "@/lib/blockchain/solana-client";
 import { X, Check } from "lucide-react";
+import { deposit } from "privacycash/utils";
+export * from "privacycash/utils";
 
 interface PrivateDepositModalProps {
   open: boolean;
@@ -27,9 +33,17 @@ export function PrivateDepositModal({
   onOpenChange,
   onSuccess,
 }: PrivateDepositModalProps) {
-  const { activeAccount, shadowWireClient, isPrivateMode, signTransaction } =
-    useWallet();
+  const {
+    activeAccount,
+    shadowWireClient,
+    isPrivateMode,
+    signTransaction,
+    signVersionedTransaction,
+    encryptionService,
+    connection,
+  } = useWallet();
   const [amount, setAmount] = useState("");
+  const [selectedProtocol, setSelectedProtocol] = useState("ShadowWire");
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<
     "idle" | "loading" | "success" | "error"
@@ -37,25 +51,43 @@ export function PrivateDepositModal({
   const [txHash, setTxHash] = useState<string | null>(null);
 
   const handleDeposit = async () => {
-    if (!activeAccount || !shadowWireClient || !isPrivateMode) return;
+    if (!activeAccount) return;
 
     try {
       setStatus("loading");
       setError(null);
 
-      const depositTx = await shadowWireClient.deposit({
-        wallet: activeAccount.address,
-        amount: parseFloat(amount) * 1e9, // Convert to lamports
-      });
+      if (selectedProtocol === "ShadowWire") {
+        if (!shadowWireClient || !isPrivateMode) return;
 
-      const unsignedTx = Transaction.from(
-        Buffer.from(depositTx.unsigned_tx_base64, "base64"),
-      );
+        const depositTx = await shadowWireClient.deposit({
+          wallet: activeAccount.address,
+          amount: parseFloat(amount) * 1e9, // Convert to lamports
+        });
 
-      // Sign with the active account's keypair
-      const signedTx = await signTransaction(unsignedTx);
-      const txSignature = await sendSignedTransaction(signedTx);
-      setTxHash(txSignature);
+        const unsignedTx = Transaction.from(
+          Buffer.from(depositTx.unsigned_tx_base64, "base64"),
+        );
+
+        // Sign with the active account's keypair
+        const signedTx = await signTransaction(unsignedTx);
+        const txSignature = await sendSignedTransaction(signedTx);
+        setTxHash(txSignature);
+      } else if (selectedProtocol === "PrivacyCash" && encryptionService) {
+        const { WasmFactory } = await import("@lightprotocol/hasher.rs");
+        const lightWasm = await WasmFactory.getInstance();
+
+        await deposit({
+          lightWasm: lightWasm,
+          connection,
+          amount_in_lamports: parseFloat(amount) * 1e9,
+          keyBasePath: "/circuit2",
+          publicKey: new PublicKey(activeAccount.publicKey),
+          transactionSigner: signVersionedTransaction,
+          storage: localStorage,
+          encryptionService,
+        });
+      }
 
       setStatus("success");
       setAmount("");
@@ -124,6 +156,20 @@ export function PrivateDepositModal({
               </p>
 
               <div className="flex flex-col gap-4 w-full">
+                <Label htmlFor="deposit-protocol">Protocol</Label>
+                <Select
+                  value={selectedProtocol}
+                  onValueChange={setSelectedProtocol}
+                >
+                  <SelectTrigger id="deposit-protocol" className="mt-1.5">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ShadowWire">ShadowWire</SelectItem>
+                    <SelectItem value="PrivacyCash">Privacy Cash</SelectItem>
+                  </SelectContent>
+                </Select>
+
                 <Label htmlFor="amount">Amount in SOL</Label>
                 <Input
                   id="amount"
@@ -137,7 +183,12 @@ export function PrivateDepositModal({
                 />
                 <Button
                   onClick={handleDeposit}
-                  disabled={!amount || status === "loading" || !isPrivateMode}
+                  disabled={
+                    !amount ||
+                    status === "loading" ||
+                    (selectedProtocol === "ShadowWire" &&
+                      (!isPrivateMode || !shadowWireClient))
+                  }
                   className="w-full"
                 >
                   {status === "loading" ? "Processing..." : "Deposit"}
